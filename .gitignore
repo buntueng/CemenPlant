@@ -1,3 +1,3 @@
 # ignore all database
-/database
 /__pycache__
+/temp_files

@@ -1,15 +1,13 @@
 import tkinter as tk
 from tkinter import messagebox
-import subprocess
 import os
 import sqlite3
-from share_functions import center_screen
+from share_library import center_screen
 
 software_path = os.path.dirname(os.path.realpath(__file__))
 main_window_path = software_path + '\\main_window.py'
 database_path = software_path +"\\database\\main_db.db"
-queue_register_path = software_path + '\\queue_register_window.py'
-queue_register_cmd = 'python ' + queue_register_path
+run_home_window = 'python ' + software_path + '\\home_window.py'
 
 
 def check_user():
@@ -23,7 +21,7 @@ def check_user():
     rows = db_cursor.fetchall()
     if len(rows) == 1:
         main_window.destroy()
-        os.system(queue_register_cmd)
+        os.system(run_home_window)
     else:
         messagebox.showerror(title="เกิดข้อผิดพลาด", message="ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง")
 
