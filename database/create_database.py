@@ -36,7 +36,7 @@ try:
     db_cursor.execute(create_event_log_table)
     # ======= create booking table ==============================================
     create_booking_table = """ CREATE TABLE  IF NOT EXISTS booking_table(
-            Booking_ID              INT     AUTO INCREMENT,
+            Booking_ID              INTEGER PRIMARY KEY AUTOINCREMENT,
             Record_Time             TIMESTAMP,
             Booking_Date_Time       TIMESTAMP,
             Customer_Name           VARCHAR(64)     NOT NULL,
