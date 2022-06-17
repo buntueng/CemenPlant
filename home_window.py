@@ -7,17 +7,37 @@ import datetime
 
 # ===========================================================================
 software_path = os.path.dirname(os.path.realpath(__file__))
-controller_path = software_path + '\\controller_window.py'
+controller_path = software_path + '/controller_window.py'
+
+run_formula_window = 'python ' + software_path + '/formula_window.py'
+
+run_controller_window = 'python '+ software_path + '/controller_window.py'
+
 # ============ subprogram ===================================================
 concrete_names = []
+
+def open_formula_window():
+    main_window.destroy()
+    os.system(run_formula_window)
+
+def open_controller_window():
+    main_window.destroy()
+    os.system(run_controller_window)
+
+def open_formula_window():
+    main_window.destroy()
+    os.system(run_formula_window)
+
 def process_queue():
     check_select_item = waiting_queue_report.focus()
     if len(check_select_item) > 0:
         booking_id = waiting_queue_report.item(check_select_item)['values'][0]
         process_booking_queue(booking_id)
-        main_window.after(100,update_booking_queue_view)
+        update_booking_queue_view
+        main_window.after(1000,open_controller_window())
     else:
         messagebox.showinfo(title="เกิดข้อผิดพลาด",message="โปรดเลือกคิวที่ต้องการผลิต")
+        
 def remove_queue():
     check_select_item = waiting_queue_report.focus()
     if len(check_select_item) > 0:
@@ -53,7 +73,8 @@ def record_booking():
         data_list.append(customer_note_entry.get())                                                 # commment
         data_list[1],data_list[2],data_list[3],data_list[4],data_list[5],data_list[6],data_list[7]
         record_booking_data(data_list)
-        update_booking_queue_view()
+        clear_all_input()
+        main_window.after(100,update_booking_queue_view())
     else:
         message = 'โปรดตรวจสอบข้อมูลดังนี้\n'
         if customer_name_entry.get() == "":
@@ -210,6 +231,8 @@ remove_queue_button = tk.Button(master=bottom_frame,text='ยกเลิกค�
 remove_queue_button.grid(row=1,column=1,padx=10,sticky='n',pady=10)
 process_queue_button = tk.Button(master=bottom_frame,text='เลือกคิวทำงาน',width=23,height=2,font=main_font,command=process_queue)
 process_queue_button.grid(row=2,column=1,padx=10,sticky='n')
+process_queue_button = tk.Button(master=bottom_frame,text='ปรับสูตรปูน',width=23,height=2,font=main_font,command=open_formula_window)
+process_queue_button.grid(row=3,column=1,padx=10,sticky='n')
 
 update_booking_queue_view()
 

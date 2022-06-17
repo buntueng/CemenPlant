@@ -3,7 +3,7 @@ from sqlite3 import Error
 import os
 
 database_path = os.path.dirname(os.path.realpath(__file__))
-db_file = database_path+"\\main_db.db"
+db_file = database_path+"/main_db.db"
 
 db_connector = False
 try:

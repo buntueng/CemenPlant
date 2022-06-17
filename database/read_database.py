@@ -3,7 +3,7 @@ from sqlite3 import Error
 import os
 
 database_path = os.path.dirname(os.path.realpath(__file__))
-db_file = database_path+"\\main_db.db"
+db_file = database_path+"/main_db.db"
 db_connector = False
 
 def read_booking():
@@ -52,8 +52,8 @@ def delete_all_in_booking_table():
 
 
 
-#read_event_log()
-#read_user_table()
-#read_concrete_formula()
-#delete_all_in_booking_table()
+# read_event_log()
+# read_user_table()
+# read_concrete_formula()
+# delete_all_in_booking_table()
 read_booking()

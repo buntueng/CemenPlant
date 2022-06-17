@@ -5,9 +5,9 @@ import sqlite3
 from share_library import center_screen
 
 software_path = os.path.dirname(os.path.realpath(__file__))
-main_window_path = software_path + '\\main_window.py'
-database_path = software_path +"\\database\\main_db.db"
-run_home_window = 'python ' + software_path + '\\home_window.py'
+main_window_path = software_path + '/main_window.py'
+database_path = software_path +"/database/main_db.db"
+run_home_window = 'python ' + software_path + '/home_window.py'
 
 
 def check_user():
@@ -33,7 +33,7 @@ def press_enter(event):
 # main program
 main_window = tk.Tk()
 main_window.wm_title("กรุณาใส่ชื่อและรหัสผ่านเพื่อเข้าใช้งาน")
-main_window.geometry('410x160')
+main_window.geometry('510x160')
 
 main_frame = tk.Frame(master=main_window)
 username_label = tk.Label(master=main_frame,text="User")

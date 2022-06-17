@@ -7,7 +7,7 @@ from datetime import datetime
 window_size = '1024x768'
 
 software_path = os.path.dirname(os.path.realpath(__file__))
-database_path = software_path +"\\database\\main_db.db"
+database_path = software_path +"/database/main_db.db"
 
 def process_booking_queue(booking_id):
     db_connector = sqlite3.connect(database_path)

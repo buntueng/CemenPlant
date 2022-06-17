@@ -8,7 +8,7 @@ import os
 import tkinter as tk
 from tkPDFViewer import tkPDFViewer as pdf
 
-temp_pdf_file_path = os.path.dirname(os.path.realpath(__file__)) + "\\temp_files\\temp_receipt.pdf"
+temp_pdf_file_path = os.path.dirname(os.path.realpath(__file__)) + "/temp_files/temp_receipt.pdf"
 
 
 def generate_pdf():
