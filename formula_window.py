@@ -45,7 +45,7 @@ def update_formula_to_db():
         update_concrete_formula(11,entry_values[90],entry_values[91],entry_values[92],entry_values[93],entry_values[94],entry_values[95],entry_values[96],entry_values[97],entry_values[98])
         status_text.insert(tk.END,"อัพเดตสูตรคอนกรีตแล้ว กำลังกลับโปรแกรมหลัก\n")
         status_text.see("end")
-        main_window.after(2000,open_home_window)
+        main_window.after(1000,open_home_window)
     else:
         status_text.insert(tk.END,"โปรดเช็คค่าที่กำหนดว่าถูกต้องหรือไม่\n")
         status_text.see("end")

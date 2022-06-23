@@ -10,11 +10,14 @@ software_path = os.path.dirname(os.path.realpath(__file__))
 controller_path = software_path + '/controller_window.py'
 
 run_formula_window = 'python ' + software_path + '/formula_window.py'
-
+run_report_window = 'python ' + software_path + '/report_window.py'
 run_controller_window = 'python '+ software_path + '/controller_window.py'
 
 # ============ subprogram ===================================================
 concrete_names = []
+def open_report_window():
+    main_window.destroy()
+    os.system(run_report_window)
 
 def open_formula_window():
     main_window.destroy()
@@ -228,11 +231,13 @@ waiting_queue_report.heading("order_quantity", text="ปริมาณ (คิ�
 waiting_queue_report.column("order_quantity", minwidth=0, width=120, stretch=tk.NO,anchor=tk.CENTER)
 
 remove_queue_button = tk.Button(master=bottom_frame,text='ยกเลิกคิวจอง',width=23,height=2,font=main_font,command=remove_queue)
-remove_queue_button.grid(row=1,column=1,padx=10,sticky='n',pady=10)
+remove_queue_button.grid(row=1,column=1,padx=10,sticky='n',pady=5)
 process_queue_button = tk.Button(master=bottom_frame,text='เลือกคิวทำงาน',width=23,height=2,font=main_font,command=process_queue)
 process_queue_button.grid(row=2,column=1,padx=10,sticky='n')
-process_queue_button = tk.Button(master=bottom_frame,text='ปรับสูตรปูน',width=23,height=2,font=main_font,command=open_formula_window)
-process_queue_button.grid(row=3,column=1,padx=10,sticky='n')
+update_formula_button = tk.Button(master=bottom_frame,text='ปรับสูตรปูน',width=23,height=2,font=main_font,command=open_formula_window)
+update_formula_button.grid(row=3,column=1,padx=10,sticky='n')
+open_report_button = tk.Button(master=bottom_frame,text='แสดงรายงาน',width=23,height=2,font=main_font,command=open_report_window)
+open_report_button.grid(row=4,column=1,padx=10,sticky='n')
 
 update_booking_queue_view()
 
