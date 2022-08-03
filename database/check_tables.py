@@ -14,6 +14,10 @@ try:
     db_cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
     print(db_cursor.fetchall())
 
+    # ======= read recording_table 
+    db_cursor.execute("SELECT * FROM recording_table;")
+    print(db_cursor.fetchall())
+
     
 except Error as e:
     print("error")
