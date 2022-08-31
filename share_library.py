@@ -19,7 +19,7 @@ def save_complete_queue(data_list):
     # db_cursor.execute(sql_query,(current_datetime,data_list[0],data_list[1],data_list[2],data_list[3],data_list[4],data_list[5],data_list[6],data_list[7],data_list[8],data_list[9],data_list[10],data_list[11],data_list[12],data_list[13],data_list[14],data_list[15],data_list[16],data_list[17],data_list[18],data_list[19],data_list[20]))
     #sql_query = "INSERT INTO recording_table(Record_Time) VALUES(?)"
     sql_query = "INSERT INTO recording_table(Booking_ID, Record_Time, Customer_Name,Keep_Sample,Amount,Description,Agg1_Target,Agg2_Target,Agg3_Target,Cemen_Target,Flyash_Target,Water_Target,Chemical1_Target,Chemical2_Target,Agg1_Measure,Agg2_Measure,Agg3_Measure,Cemen_Measure,Flyash_Measure,Water_Measure,Chemical1_Measure,Chemical2_Measure) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-    db_cursor.execute(sql_query,(data_list[0],current_datetime,data_list[1],data_list[2],data_list[20],data_list[19],data_list[3],data_list[4],data_list[5],data_list[6],data_list[7],data_list[8],data_list[9],data_list[10],data_list[11],data_list[12],data_list[13],data_list[14],data_list[15],data_list[16],data_list[17],data_list[18]))
+    db_cursor.execute(sql_query,(data_list[0],current_datetime,data_list[1],data_list[2],data_list[3],data_list[20],data_list[4],data_list[5],data_list[6],data_list[7],data_list[8],data_list[9],data_list[10],data_list[11],data_list[12],data_list[13],data_list[14],data_list[15],data_list[16],data_list[17],data_list[18],data_list[19]))
     db_connector.commit()
     db_connector.close()
 
@@ -74,7 +74,7 @@ def remove_booking_queue(booking_id):
     db_connector.close()
 
 def read_booking_queue():
-    cmd = 'SELECT Booking_ID,Booking_Date_Time,Customer_Name,Phone,Amount FROM booking_table WHERE Booking_Status = "0" ORDER BY Booking_Date_Time ASC'
+    cmd = 'SELECT Booking_ID,Booking_Date_Time,Customer_Name,Phone,Amount FROM booking_table WHERE Booking_Status = "0" ORDER BY Booking_Date_Time DESC'
     queue_list = read_table_execute(cmd)
 
     return queue_list

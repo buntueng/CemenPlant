@@ -16,7 +16,7 @@ def generate_pdf():
     c.setFont("TH Niramit AS", 30)
     c.drawString(100,750,"สวัสดีจร้าาา")
     c.setFont("TH Niramit AS", 12)
-    c.drawString(200,750,"สบายดี")
+    c.drawString(200,750,"อีกนาน")
 
     data=[(1,2),(3,4)]
     table = Table(data, colWidths=270, rowHeights=79)

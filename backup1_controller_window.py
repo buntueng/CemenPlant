@@ -1,26 +1,19 @@
-# disable chem pump
 import os
 import tkinter as tk
 from tkinter import  DISABLED, StringVar, font
 from share_library import center_screen, default_window_size,read_concrete_formula_from_db,record_booking_data,read_booking_queue,remove_booking_queue,process_booking_queue
 from share_library import get_processing_queue,relife_booking_queue,fail_booking_queue,read_concrete_formula
-from share_library import complete_booking_queue,save_complete_queue
+from share_library import complete_booking_queue,save_complete_queue,remove_booking_queue
 from pymodbus.client.sync import ModbusSerialClient as ModbusClient
 
 software_path = os.path.dirname(os.path.realpath(__file__))
 run_home_window = 'python ' + software_path + '/home_window.py'
 
-running = False
-# ===============================
-def read_time_constants():
-    time_config_file = software_path+'/time_config.txt'
-    params = []
-    with open(time_config_file) as conf_file:
-        params = conf_file.readlines()
-    return params
+running = True
+
 # ===========================
 dummy_weight = 11
-clear_queue_status = 0
+
 # ==== global variable =======
 state_interval = 0
 main_state = 0
@@ -44,7 +37,7 @@ def main_controller():
             print(main_state)
         if main_state == 0:
             button_cancel_pressed = False
-            main_state = 1                        
+            main_state = 1
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -80,7 +73,7 @@ def main_controller():
                 quad_cubic_load = False
             else:
                 quad_cubic_load = True
-            main_state = 700                      # set timers in PLC1 and PLC2
+            main_state = 2
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -135,8 +128,7 @@ def main_controller():
 
         # set rock1 weights to PLC1
         elif main_state == 6:
-            float_rock1_target_weight = float(rock1_target_weight_string.get())
-            rock1_weight_int = int((float_rock1_target_weight+65)/2)
+            rock1_weight_int = int((float(rock1_target_weight_string.get())+65)/2)
             if running:
                 modbus_result = client.write_register(address=0,value=rock1_weight_int,unit=0x01)
                 if modbus_result.function_code < 0x80:
@@ -215,20 +207,26 @@ def main_controller():
 
         # ========= set flyash weight ==============
         elif main_state == 11:
-            flyash_float = float(flyash_target_weight_string.get())/1.07
+            flyash_float = float(flyash_target_weight_string.get())*1.02
             flyash_weight_int = 0
             current_amount = float(amount_string.get())
             if current_amount <= 0.5:
                 if flyash_float <= 11:
                     flyash_weight_int = int((flyash_float))
                 else:
-                    flyash_weight_int = int(((flyash_float)))
+                    flyash_weight_int = int(((flyash_float)-7)/1.05)
             else:
                 if flyash_float <= 11:
-                    flyash_weight_int = int((flyash_float))
+                    flyash_weight_int = int((flyash_float)*1.3)
                 else:
-                    flyash_weight_int = int((flyash_float))
-    
+                    flyash_weight_int = int((flyash_float)*1.35)
+            
+            # if flyash_float <= 15:
+            #     #flyash_weight_int = int((flyash_float)/1.05)
+            #     flyash_weight_int = int((flyash_float))
+            # else:
+            #     #flyash_weight_int = int((flyash_float-11)/1.05)
+            #     flyash_weight_int = int((flyash_float-11))
             # ======== running process =======
             if running:
                 modbus_result = client.write_register(address=0,value=flyash_weight_int,unit=2)
@@ -250,9 +248,9 @@ def main_controller():
             cemen_weight_int = 0
             current_amount = float(amount_string.get())
             if current_amount <= 0.5:
-                cemen_weight_int = int((f1+c1)/1.07)
+                cemen_weight_int = int((f1+c1)/1.01)
             else:
-                cemen_weight_int = int((f1+c1)/1.07)
+                cemen_weight_int = int((f1+c1)/1.03)
             
             if running:
                 modbus_result = client.write_register(address=1,value=cemen_weight_int,unit=2)
@@ -281,7 +279,7 @@ def main_controller():
                 main_window.after(state_delay,main_controller)
         # ======= set chem1 weight =============
         elif main_state == 14:
-            chem1_weight_int = int(float(chem1_target_weight_string.get())*200)+200
+            chem1_weight_int = int(float(chem1_target_weight_string.get())*200)
             if running:
                 modbus_result = client.write_register(address=10,value=chem1_weight_int,unit=2)
                 if modbus_result.function_code < 0x80:
@@ -297,12 +295,11 @@ def main_controller():
         elif main_state == 15:
             c1 = float(chem1_target_weight_string.get())
             c2 = float(chem2_target_weight_string.get())
-            chem2_weight_int = int((c1+c2)*200)+200
+            chem2_weight_int = int((c1+c2)*200)
             if running:
                 modbus_result = client.write_register(address=11,value=chem2_weight_int,unit=2)
                 if modbus_result.function_code < 0x80:
                     main_state = 16
-                    # main_state = 17         # skip weight chem1
             else:
                 main_state = 16
                 message = "set chem2 " + str(chem2_weight_int) + " kg"
@@ -401,7 +398,6 @@ def main_controller():
                 modbus_result = client.write_coil(address=2,value=1,unit=1)
                 if modbus_result.function_code < 0x80:
                     main_state = 22
-                    #main_state = 23         # skip check chem1 weight
             else:
                 main_state = 22
                 message = "start weighing rock2"
@@ -438,7 +434,6 @@ def main_controller():
                     one_digit = "{:.1f}".format(update_weight)
                     total_chem1_weight_string.set(one_digit)
                     main_state = 24
-                    #main_state = 25         # skip start weighing chem 2
             else:
                 chem1_weight_string.set(str(dummy_weight))
                 # =========== upate total chem1 ================
@@ -679,7 +674,6 @@ def main_controller():
                     update_weight = previous_weight + int(cemen_weight_string.get())
                     total_cemen_weight_string.set(str(update_weight))
                     main_state = 310
-                    #main_state = 311            # skip check chem2 weight
             else:
                 cemen_weight_string.set(str(dummy_weight))
                 # =========== update total weight ===========
@@ -783,13 +777,12 @@ def main_controller():
                 modbus_result = client.write_coil(address=11,value=1,unit=1)
                 if modbus_result.function_code < 0x80:
                     main_state = 315
-                    #main_state = 316        # skip pump chem to mixer
             else:
                 main_state = 315
                 message = "start mixing aggs"
                 add_status(message)
             if in_loop:
-                state_delay = state_interval + 10000
+                state_delay = state_interval + 15000
                 main_window.after(state_delay,main_controller)
         # ============= pump chem to mixer ========================
         elif main_state == 315:
@@ -827,9 +820,11 @@ def main_controller():
                 main_window.after(state_delay,main_controller)
         # ================= dummy state >> wait mixer ==============
         elif main_state == 317:
+            # message = "dummy state"
+            # add_status(message)
             main_state = 318
             if in_loop:
-                state_delay = state_interval + 1000
+                state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
         # ================= open mixer gate all process take 8 seconds =========================
         elif main_state == 318:
@@ -845,23 +840,68 @@ def main_controller():
             if in_loop:
                 state_delay = state_interval + 1000
                 main_window.after(state_delay,main_controller)
-      
-        # ============ wait open mixer gate finished
-        elif main_state == 319:
+        # ==============================================
+        elif main_state == 319:     # wait 3 seconds
+            main_state = 320
+            if in_loop:
+                state_delay = state_interval + 3000
+                main_window.after(state_delay,main_controller)
+        elif main_state == 320:
             if running:
-                modbus_result = client.read_coils(address=20,count=1,unit=2)
-                if modbus_result.function_code < 0x80 and modbus_result.bits[0] == False:
-                    main_state = 320
+                modbus_result = client.write_coil(address=20,value=0,unit=2)
+                if modbus_result.function_code < 0x80:
+                    main_state = 321
+            else:
+                message = "dummy state"
+                add_status(message)
+                main_state = 321
+            if in_loop:
+                state_delay = state_interval + 3000
+                main_window.after(state_delay,main_controller)
+
+        elif main_state == 321:
+            if running:
+                modbus_result = client.write_coil(address=20,value=1,unit=2)
+                if modbus_result.function_code < 0x80:
+                    main_state = 322
                     #mixer_valve_display_label.configure(bg='white')
             else:
                 message = "dummy state"
                 add_status(message)
-                main_state = 320
+                main_state = 322
+            if in_loop:
+                state_delay = state_interval + 500
+                main_window.after(state_delay,main_controller)
+        
+        # ============ wait open mixer gate finished
+        elif main_state == 322:
+            if running:
+                modbus_result = client.read_coils(address=20,count=1,unit=2)
+                if modbus_result.function_code < 0x80 and modbus_result.bits[0] == False:
+                    main_state = 323
+                    #mixer_valve_display_label.configure(bg='white')
+            else:
+                message = "dummy state"
+                add_status(message)
+                main_state = 323
             if in_loop:
                 state_delay = state_interval + 1000
                 main_window.after(state_delay,main_controller)
+        # ========== reopen gate 6 seconds ===================
+        elif main_state == 323:
+            if running:
+                modbus_result = client.write_coil(address=20,value=1,unit=2)
+                if modbus_result.function_code < 0x80:
+                    main_state = 324
+            else:
+                main_state = 324
+                message = "reopen mixer gate"
+                add_status(message)
+            if in_loop:
+                state_delay = state_interval + 6000
+                main_window.after(state_delay,main_controller)
         # ================ close mixer gate ===================
-        elif main_state == 320:
+        elif main_state == 324:
             mixer_valve_display_label.configure(bg='white')
             if running:
                 modbus_result = client.write_coil(address=20,value=0,unit=2)
@@ -953,236 +993,11 @@ def main_controller():
             data_list.append(formula_name_string.get())
             data_list.append(float(concrete_order_string.get()))
             save_complete_queue(data_list)
-            add_status("save results")
             #======= update queue status =================
             complete_booking_queue(booking_ID)
             start_process_button.configure(state=tk.DISABLED)
             go_home_button.configure(state=tk.NORMAL)
 
-        # ================================ set plc 1 and plc2 time parameters
-        elif main_state == 700:
-            t0_constant = int(plc1_time_params[0])
-            if running:
-                modbus_result = client.write_register(address=100,value=t0_constant,unit=0x01)
-                if modbus_result.function_code < 0x80:
-                    main_state = 701
-            else:
-                main_state = 701
-                message = "try to set timer0"
-                add_status(message)
-            if in_loop:
-                state_delay = state_interval + 200
-                main_window.after(state_delay,main_controller)
-
-        elif main_state == 701:
-            t10_constant = int(plc1_time_params[1])
-            if running:
-                modbus_result = client.write_register(address=101,value=t10_constant,unit=0x01)
-                if modbus_result.function_code < 0x80:
-                    main_state = 702
-            else:
-                main_state = 702
-                message = "try to set timer 10"
-                add_status(message)
-            if in_loop:
-                state_delay = state_interval + 200
-                main_window.after(state_delay,main_controller)
-        
-        elif main_state == 702:
-            t11_constant = int(plc1_time_params[2])
-            if running:
-                modbus_result = client.write_register(address=102,value=t11_constant,unit=0x01)
-                if modbus_result.function_code < 0x80:
-                    main_state = 703
-            else:
-                main_state = 703
-                message = "try to set timer 11"
-                add_status(message)
-            if in_loop:
-                state_delay = state_interval + 200
-                main_window.after(state_delay,main_controller)
-
-        elif main_state == 703:
-            t6_constant = int(plc1_time_params[3])
-            if running:
-                modbus_result = client.write_register(address=103,value=t6_constant,unit=0x01)
-                if modbus_result.function_code < 0x80:
-                    main_state = 704
-            else:
-                main_state = 704
-                message = "try to set timer 6"
-                add_status(message)
-            if in_loop:
-                state_delay = state_interval + 200
-                main_window.after(state_delay,main_controller)
-
-        elif main_state == 704:
-            t7_constant = int(plc1_time_params[4])
-            if running:
-                modbus_result = client.write_register(address=104,value=t7_constant,unit=0x01)
-                if modbus_result.function_code < 0x80:
-                    main_state = 705
-            else:
-                main_state = 705
-                message = "try to set timer 7"
-                add_status(message)
-            if in_loop:
-                state_delay = state_interval + 200
-                main_window.after(state_delay,main_controller)
-
-        elif main_state == 705:
-            t8_constant = int(plc1_time_params[5])
-            if running:
-                modbus_result = client.write_register(address=105,value=t8_constant,unit=0x01)
-                if modbus_result.function_code < 0x80:
-                    main_state = 706
-            else:
-                main_state = 706
-                message = "try to set timer 8"
-                add_status(message)
-            if in_loop:
-                state_delay = state_interval + 200
-                main_window.after(state_delay,main_controller)
-
-        elif main_state == 706:
-            t9_constant = int(plc1_time_params[6])
-            if running:
-                modbus_result = client.write_register(address=106,value=t9_constant,unit=0x01)
-                if modbus_result.function_code < 0x80:
-                    main_state = 707
-            else:
-                main_state = 707
-                message = "try to set timer 9"
-                add_status(message)
-            if in_loop:
-                state_delay = state_interval + 200
-                main_window.after(state_delay,main_controller)
-
-        elif main_state == 707:
-            t20_constant = int(plc1_time_params[7])
-            if running:
-                modbus_result = client.write_register(address=107,value=t20_constant,unit=0x01)
-                if modbus_result.function_code < 0x80:
-                    main_state = 708
-            else:
-                main_state = 708
-                message = "try to set timer 20"
-                add_status(message)
-            if in_loop:
-                state_delay = state_interval + 200
-                main_window.after(state_delay,main_controller)
-        #======= plc2
-        elif main_state == 708:
-            t3_constant = int(plc2_time_params[0])
-            if running:
-                modbus_result = client.write_register(address=100,value=t3_constant,unit=0x02)
-                if modbus_result.function_code < 0x80:
-                    main_state = 709
-            else:
-                main_state = 709
-                message = "try to set timer 3 PLC2"
-                add_status(message)
-            if in_loop:
-                state_delay = state_interval + 200
-                main_window.after(state_delay,main_controller)
-        
-        elif main_state == 709:
-            t10_constant = int(plc2_time_params[1])
-            if running:
-                modbus_result = client.write_register(address=101,value=t10_constant,unit=0x02)
-                if modbus_result.function_code < 0x80:
-                    main_state = 710
-            else:
-                main_state = 710
-                message = "try to set timer 10 PLC2"
-                add_status(message)
-            if in_loop:
-                state_delay = state_interval + 200
-                main_window.after(state_delay,main_controller)
-        
-        elif main_state == 710:
-            t11_constant = int(plc2_time_params[2])
-            if running:
-                modbus_result = client.write_register(address=102,value=t11_constant,unit=0x02)
-                if modbus_result.function_code < 0x80:
-                    main_state = 711
-            else:
-                main_state = 711
-                message = "try to set timer 10 PLC2"
-                add_status(message)
-            if in_loop:
-                state_delay = state_interval + 200
-                main_window.after(state_delay,main_controller)
-        
-        elif main_state == 711:
-            t12_constant = int(plc2_time_params[3])
-            if running:
-                modbus_result = client.write_register(address=103,value=t12_constant,unit=0x02)
-                if modbus_result.function_code < 0x80:
-                    main_state = 712
-            else:
-                main_state = 712
-                message = "try to set timer 12 PLC2"
-                add_status(message)
-            if in_loop:
-                state_delay = state_interval + 200
-                main_window.after(state_delay,main_controller)
-
-        elif main_state == 712:
-            t13_constant = int(plc2_time_params[4])
-            if running:
-                modbus_result = client.write_register(address=104,value=t13_constant,unit=0x02)
-                if modbus_result.function_code < 0x80:
-                    main_state = 713
-            else:
-                main_state = 713
-                message = "try to set timer 13 PLC2"
-                add_status(message)
-            if in_loop:
-                state_delay = state_interval + 200
-                main_window.after(state_delay,main_controller)
-
-        elif main_state == 713:
-            t14_constant = int(plc2_time_params[5])
-            if running:
-                modbus_result = client.write_register(address=105,value=t14_constant,unit=0x02)
-                if modbus_result.function_code < 0x80:
-                    main_state = 714
-            else:
-                main_state = 714
-                message = "try to set timer 14 PLC2"
-                add_status(message)
-            if in_loop:
-                state_delay = state_interval + 200
-                main_window.after(state_delay,main_controller)
-
-        elif main_state == 714:
-            t15_constant = int(plc2_time_params[6])
-            if running:
-                modbus_result = client.write_register(address=106,value=t15_constant,unit=0x02)
-                if modbus_result.function_code < 0x80:
-                    main_state = 715
-            else:
-                main_state = 715
-                message = "try to set timer 15 PLC2"
-                add_status(message)
-            if in_loop:
-                state_delay = state_interval + 200
-                main_window.after(state_delay,main_controller)
-        
-        elif main_state == 715:
-            t16_constant = int(plc2_time_params[7])
-            if running:
-                modbus_result = client.write_register(address=107,value=t16_constant,unit=0x02)
-                if modbus_result.function_code < 0x80:
-                    main_state = 2
-            else:
-                main_state = 2
-                message = "try to set timer 16 PLC2"
-                add_status(message)
-            if in_loop:
-                state_delay = state_interval + 200
-                main_window.after(state_delay,main_controller)
 
         # this state run after the stop button pressed
         # clear all coils in PLC1 and PLC2 after that exit loop
@@ -1240,12 +1055,13 @@ def clear_total_weight_display():
     total_flyash_weight_string.set('0')
     total_cemen_weight_string.set('0')
 
-
 def clear_queue():
     global booking_ID
-    global clear_queue_status
+    print(type(booking_ID))
+    print(booking_ID)
     if booking_ID != '':
-        clear_queue_status = 1
+        #fail_booking_queue(booking_ID)
+        remove_booking_queue(booking_ID)
         clear_previous_weight_display()
         #===============================
         customer_name_string.set("")
@@ -1304,10 +1120,7 @@ def stop_process_button_pressed():
 def go_home():
     if int(booking_ID)>0:
         if main_state == 0:
-            if clear_queue_status:
-                remove_booking_queue(booking_ID)
-            else:
-                relife_booking_queue(booking_ID)
+            relife_booking_queue(booking_ID)
         elif main_state >= 1000:
             fail_booking_queue(booking_ID)
     main_window.destroy()
@@ -1644,14 +1457,5 @@ if len(current_booking) > 0:
 
 if concrete_order_string.get() == "":
     start_process_button.configure(state=tk.DISABLED)
-
-time_constants = read_time_constants()
-plc1_time_params = time_constants[0].strip().split(',')
-plc2_time_params = time_constants[1].strip().split(',')
-
-
-# print(plc1_time_params)
-# print(plc2_time_params)
-remove_booking_queue(booking_ID)
 
 main_window.mainloop()

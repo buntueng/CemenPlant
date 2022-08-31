@@ -1,0 +1,17 @@
+{
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default"
+            },
+            "previewLimit": 50,
+            "server": "sbjonline.ddns.net",
+            "port": 5000,
+            "driver": "MariaDB",
+            "name": "CM_DB",
+            "database": "sbj",
+            "username": "root",
+            "password": "sbj41310962"
+        }
+    ]
+}
