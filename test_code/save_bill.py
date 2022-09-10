@@ -5,7 +5,7 @@ import subprocess
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 font_path = dir_path + r'/fonts/THNiramitAS.ttf'
-output_path = dir_path + r'/Bill.pdf'
+output_path = dir_path + r'/bill_template.pdf'
 bottom_offset = 10
 
 pdf = FPDF(orientation = 'P', unit = 'mm', format='A4')

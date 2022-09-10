@@ -6,78 +6,11 @@ from share_library import center_screen, default_window_size,read_concrete_formu
 from share_library import get_processing_queue,relife_booking_queue,fail_booking_queue,read_concrete_formula
 from share_library import complete_booking_queue,save_complete_queue
 from pymodbus.client.sync import ModbusSerialClient as ModbusClient
-from os.path import exists
-
-from fpdf import FPDF
-from pdfrw import PageMerge, PdfReader, PdfWriter
-from datetime import datetime
-from PyPDF2 import PdfFileWriter, PdfFileReader
 
 software_path = os.path.dirname(os.path.realpath(__file__))
 run_home_window = 'python ' + software_path + '/home_window.py'
 
-running = False
-#======= add bill information =================
-dir_path = os.path.dirname(os.path.realpath(__file__))
-font_path = dir_path + r'/fonts/THNiramitAS.ttf'
-input_path = dir_path + r'/other_files/bill_template.pdf'
-
-ON_PAGE_INDEX = 0
-UNDERNEATH = False  # if True, new content will be placed underneath page (painted first)
-
-def add_bill(customer_name,address,cemen_formula,cemen_amount):
-    output_temp_file = "/home/yana/Documents/CemenPlant/bills/temp_bill.pdf"
-    now = datetime.now()
-    current_date = now.strftime("%d/%m/%Y")
-    current_time = now.strftime("%H:%M:%S")
-    cemen_formula_to_display = ""
-    if cemen_formula [-3:] == 'ksc':
-        cemen_formula_to_display = cemen_formula[:-3]
-    else:
-        cemen_formula_to_display = cemen_formula
-    #============================================================
-    pdf_reader = PdfReader(input_path)
-    pdf_writer = PdfWriter()
-    pdf_writer.pagearray = pdf_reader.Root.Pages.Kids
-    # Instantiation of inherited class
-    fpdf = FPDF(orientation = 'P', unit = 'mm', format='A4')
-    fpdf.alias_nb_pages()
-    fpdf.add_page()
-    fpdf.add_font("THNiramit", "", "/home/yana/Documents/CemenPlant/fonts/THNiramitAS.ttf", uni=True)
-    fpdf.set_font("THNiramit")
-    # add information to form
-    fpdf.text(53, 62, customer_name)                         # customer name
-    fpdf.text(53, 68, address)                               # customer address
-    fpdf.text(87, 78, cemen_formula_to_display)              # cemen formula
-    fpdf.text(55,95,cemen_amount)                            # concrete amount
-    fpdf.text(55,102,current_date)                           # add date
-    fpdf.text(115,102,current_time)                          # add time
-    # add the same information to form
-    fpdf.text(53, 185, customer_name)                         # customer name
-    fpdf.text(53, 191, address)                               # customer address
-    fpdf.text(87, 201, cemen_formula_to_display)              # cemen formula
-    fpdf.text(55,217,cemen_amount)                            # concrete amount
-    fpdf.text(55,224,current_date)                            # add date
-    fpdf.text(115,224,current_time)                           # add time
-    fpdf.output(output_temp_file, 'F')
-    #============================================================    
-def merge_bill(output_pdf):
-    bill_template = "/home/yana/Documents/CemenPlant/other_files/bill_template.pdf"
-    input_pdf="/home/yana/Documents/CemenPlant/bills/temp_bill.pdf"
-    watermark_obj = PdfFileReader(bill_template)
-    watermark_page = watermark_obj.getPage(0)
-
-    pdf_reader = PdfFileReader(input_pdf)
-    pdf_writer = PdfFileWriter()
-
-    for page in range(pdf_reader.getNumPages()):
-        page = pdf_reader.getPage(page)
-        page.mergePage(watermark_page)
-        pdf_writer.addPage(page)
-
-    with open(output_pdf, 'wb') as out:
-        pdf_writer.write(out)
-
+running = True
 # ===============================
 def read_time_constants():
     time_config_file = software_path+'/time_config.txt'
@@ -106,7 +39,6 @@ def main_controller():
     global quad_cubic_load
     global first_loop
     global button_cancel_pressed
-    global amount_string
     try:
         if not running:
             print(main_state)
@@ -1020,35 +952,6 @@ def main_controller():
             complete_booking_queue(booking_ID)
             start_process_button.configure(state=tk.DISABLED)
             go_home_button.configure(state=tk.NORMAL)
-            main_state = 603
-            if in_loop:
-                state_delay = state_interval + 500
-                main_window.after(state_delay,main_controller)
-
-        elif main_state == 603:
-            #=========== generate bills and print=========
-            present_time = datetime.now()
-            current_date_string = present_time.strftime('%d%B%Y')
-            bill_path1 = os.path.join(software_path,"bills")
-            bill_path2 = os.path.join(bill_path1 ,current_date_string)
-            if os.path.isdir(bill_path2):
-                pass
-            else:
-                os.makedirs(bill_path2, mode = 0o777)
-            output_file_name = str(booking_ID) + ".pdf"
-            output_path = os.path.join(bill_path2,output_file_name)
-            cname_string = customer_name_string.get()
-            caddress_string = customer_address_string
-            cformula_string = formula_name_string.get()
-            camount_string = concrete_order_string.get()
-            add_bill(customer_name=cname_string,address=caddress_string,cemen_formula=cformula_string,cemen_amount=camount_string)
-            merge_bill(output_pdf=output_path)
-            print_bill_button.configure(state=tk.NORMAL)
-            add_status("Finish")
-            stop_process_button.configure(state=DISABLED)
-            clear_queue_button.configure(state=DISABLED)
-            
-            main_state = 604     
 
         # ================================ set plc 1 and plc2 time parameters
         elif main_state == 700:
@@ -1331,16 +1234,7 @@ def clear_total_weight_display():
     total_flyash_weight_string.set('0')
     total_cemen_weight_string.set('0')
 
-def print_bill():
-    present_time = datetime.now()
-    current_date_string = present_time.strftime('%d%B%Y')
-    bill_path1 = os.path.join(software_path,"bills")
-    bill_path2 = os.path.join(bill_path1 ,current_date_string)
-    output_file_name = str(booking_ID) + ".pdf"
-    pdf_path = os.path.join(bill_path2,output_file_name)
-    if exists(pdf_path):
-        print_cmd = "lp " +pdf_path
-        os.system(print_cmd)
+
 def clear_queue():
     global booking_ID
     global clear_queue_status
@@ -1646,8 +1540,6 @@ stop_process_button.config(state=tk.DISABLED)
 
 clear_queue_button = tk.Button(master=right_frame,text="ยกเลิกคิว",font=main_font,width=25,height=1,command=clear_queue)
 
-print_bill_button = tk.Button(master=right_frame,text="ปริ้นใบส่งของ",font=main_font,width=25,height=1,command=print_bill)
-print_bill_button.configure(state=tk.DISABLED)
 
 record_label.grid(row=0,column=0,columnspan=3,pady=5)
 amount_label.grid(row=2,column=0,pady = (15,5),padx=5,sticky='e')
@@ -1695,8 +1587,7 @@ total_cemen_entry.grid(row=12,column=2)
 
 start_process_button.grid(row=13,column=0,columnspan=3,pady=(15,10),sticky=tk.E)
 stop_process_button.grid(row=14,column=0,columnspan=3,sticky=tk.E)
-clear_queue_button.grid(row=15,column=0,columnspan=3,sticky=tk.E,pady=10)
-print_bill_button.grid(row=16,column=0,columnspan=3,sticky=tk.E)
+clear_queue_button.grid(row=15,column=0,columnspan=3,sticky=tk.E)
 
 # ======= bottom frame UI ================
 status_string = StringVar()
@@ -1710,9 +1601,8 @@ status_text.grid(row=1,column=0,rowspan=2)
 clear_status_button.grid(row=1,column=1,padx=(20,0))
 go_home_button.grid(row=2,column=1,padx=(20,0))
 
-## [Booking_ID,Customer_Name,Phone,Amount,Formula_ID,Formula_Name,Keep_Sample,Address
+## [Booking_ID,Customer_Name,Phone,Amount,Formula_ID,Formula_Name,Keep_Sample]
 current_booking = get_processing_queue()
-customer_address_string = current_booking[6]
 booking_ID = '0'
 keep_sample = 0
 
@@ -1731,7 +1621,7 @@ if len(current_booking) > 0:
     concrete_order_string.set(str(current_booking[3]))
     #amount_string.set(str(current_booking[3]))
     amount_string.set("0")
-    formula_name_string.set(str(current_booking[7]))
+    formula_name_string.set(current_booking[6])
     booking_ID = current_booking[0]         # this object is a string class
     mixed_finished_string.set('0.0')
     keep_sample = current_booking[5]

@@ -1,0 +1,149 @@
+<?xml version='1.0' encoding='utf-8'?>
+<interface version="1.2">
+  <object class="tk.Toplevel" id="reportWindow">
+    <property name="height">768</property>
+    <property name="resizable">none</property>
+    <property name="title" translatable="yes">คอนกรีตผสม ห้างหุ้นส่วนจำกัด ปาน-ปริญ คอนกรีต</property>
+    <property name="width">1024</property>
+    <child>
+      <object class="ttk.Frame" id="frame1">
+        <property name="height">768</property>
+        <property name="width">1024</property>
+        <layout manager="pack">
+          <property name="side">top</property>
+        </layout>
+        <child>
+          <object class="ttk.Label" id="select_date_label">
+            <property name="text" translatable="yes">เลือกวันที่ต้่องการแสดงผล</property>
+            <layout manager="grid">
+              <property name="column">0</property>
+              <property name="columnspan">3</property>
+              <property name="padx">10</property>
+              <property name="row">0</property>
+              <property name="sticky">ew</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="start_date_label">
+            <property name="text" translatable="yes">วันที่เริ่ม</property>
+            <layout manager="grid">
+              <property name="column">0</property>
+              <property name="padx">10</property>
+              <property name="row">1</property>
+              <property name="sticky">ew</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="stop_date_label">
+            <property name="text" translatable="yes">ถึงวันที่</property>
+            <layout manager="grid">
+              <property name="column">2</property>
+              <property name="row">1</property>
+              <property name="sticky">ew</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="show_report_button">
+            <property name="command" type="command" cbtype="simple">show_report_button_pressed</property>
+            <property name="text" translatable="yes">แสดงผล</property>
+            <property name="width">10</property>
+            <layout manager="grid">
+              <property name="column">5</property>
+              <property name="padx">10 0</property>
+              <property name="row">1</property>
+              <property name="rowspan">2</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="result_label">
+            <property name="text" translatable="yes">แสดงค่าทั้งหมด</property>
+            <layout manager="grid">
+              <property name="column">0</property>
+              <property name="padx">10</property>
+              <property name="row">2</property>
+              <property name="sticky">ew</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="totsl_record_entry">
+            <property name="justify">center</property>
+            <property name="state">readonly</property>
+            <property name="textvariable">int:total_record_number_int</property>
+            <property name="width">5</property>
+            <layout manager="grid">
+              <property name="column">1</property>
+              <property name="row">2</property>
+              <property name="sticky">ew</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="order_label">
+            <property name="text" translatable="yes">รายการ</property>
+            <layout manager="grid">
+              <property name="column">2</property>
+              <property name="row">2</property>
+              <property name="sticky">ew</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Treeview" id="result_treeview">
+            <property name="height">20</property>
+            <property name="selectmode">extended</property>
+            <layout manager="grid">
+              <property name="column">0</property>
+              <property name="columnspan">9</property>
+              <property name="padx">10</property>
+              <property name="row">3</property>
+              <property name="sticky">ew</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Scrollbar" id="yaxis_scrollbar">
+            <property name="orient">vertical</property>
+            <layout manager="grid">
+              <property name="column">9</property>
+              <property name="padx">0 5</property>
+              <property name="row">3</property>
+              <property name="sticky">nse</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="export_button">
+            <property name="command" type="command" cbtype="simple">export_button_pressed</property>
+            <property name="text" translatable="yes">ส่งค่าออก</property>
+            <property name="width">10</property>
+            <layout manager="grid">
+              <property name="column">7</property>
+              <property name="padx">10</property>
+              <property name="row">1</property>
+              <property name="rowspan">2</property>
+              <property name="sticky">ew</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="print_button">
+            <property name="command" type="command" cbtype="simple">print_button_pressed</property>
+            <property name="text" translatable="yes">ปริ้น</property>
+            <property name="width">10</property>
+            <layout manager="grid">
+              <property name="column">8</property>
+              <property name="row">1</property>
+              <property name="rowspan">2</property>
+              <property name="sticky">ew</property>
+            </layout>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

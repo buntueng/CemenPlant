@@ -133,7 +133,7 @@ def read_concrete_formula_from_db():
 def get_processing_queue():
     db_connector = sqlite3.connect(database_path)
     db_cursor = db_connector.cursor()
-    sql_query = 'SELECT Booking_ID,Customer_Name,Phone,Amount,Formula_ID,Keep_Sample FROM booking_table WHERE Booking_Status = "1" ORDER BY Booking_Date_Time ASC LIMIT 1'
+    sql_query = 'SELECT Booking_ID,Customer_Name,Phone,Amount,Formula_ID,Keep_Sample,Address FROM booking_table WHERE Booking_Status = "1" ORDER BY Booking_Date_Time ASC LIMIT 1'
     db_cursor.execute(sql_query)
     result = []
     rows = db_cursor.fetchall()

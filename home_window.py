@@ -133,9 +133,11 @@ main_window.geometry(default_window_size())
 main_font = font.Font(family='TH Niramit AS',size=14,weight="bold")
 main_window.title("คอนกรีตผสม ห้างหุ้นส่วนจำกัด ปาน-ปริญ คอนกรีต")
 
-top_frame = tk.Frame(master=main_window,highlightbackground="snow4", highlightthickness=2)
+#top_frame = tk.Frame(master=main_window,highlightbackground="snow4", highlightthickness=2)
+top_frame = tk.Frame(master=main_window)
 middle_frame = tk.Frame(master=main_window)
-bottom_frame = tk.Frame(master=main_window,highlightbackground="snow4", highlightthickness=2)
+#bottom_frame = tk.Frame(master=main_window,highlightbackground="snow4", highlightthickness=2)
+bottom_frame = tk.Frame(master=main_window)
 
 top_frame.grid(row=0,column=0,sticky='w',padx=10)
 middle_frame.grid(row=1,column=0,padx=10,pady=(10,0))
