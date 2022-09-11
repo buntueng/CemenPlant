@@ -203,8 +203,8 @@ def main_controller():
 
         # set rock1 weights to PLC1
         elif main_state == 6:
-            float_rock1_target_weight = float(rock1_target_weight_string.get())
-            rock1_weight_int = int((float_rock1_target_weight+65)/2)
+            float_rock1_target_weight = float(rock1_target_weight_string.get())*0.558 + 30
+            rock1_weight_int = int(float_rock1_target_weight)
             if running:
                 modbus_result = client.write_register(address=0,value=rock1_weight_int,unit=0x01)
                 if modbus_result.function_code < 0x80:
@@ -221,7 +221,7 @@ def main_controller():
         elif main_state == 7:
             r1 = float(rock1_target_weight_string.get())
             r2 = float(rock2_target_weight_string.get())
-            rock2_weight_int = int(((r1+r2)+65)/2)
+            rock2_weight_int = int((r1+r2)*0.558 + 30)
             if running:
                 modbus_result = client.write_register(address=2,value=rock2_weight_int,unit=0x01)
                 if modbus_result.function_code < 0x80:
@@ -239,7 +239,7 @@ def main_controller():
             s1 = float(sand_target_weight_string.get())
             r1 = float(rock1_target_weight_string.get())
             r2 = float(rock2_target_weight_string.get())
-            sand_weight_int = int(((s1+r1+r2)+65)/2)
+            sand_weight_int = int((s1+r1+r2)*0.558 + 30)
             if running:
                 modbus_result = client.write_register(address=1,value=sand_weight_int,unit=0x01)
                 if modbus_result.function_code < 0x80:
@@ -283,13 +283,13 @@ def main_controller():
 
         # ========= set flyash weight ==============
         elif main_state == 11:
-            flyash_float = (float(flyash_target_weight_string.get())+20)/1.07
+            flyash_float = float(flyash_target_weight_string.get())
             flyash_weight_int = 0
             current_amount = float(amount_string.get())
             if current_amount <= 0.5:
-                flyash_weight_int = int((flyash_float))
+                flyash_weight_int = int((flyash_float)*0.95)+5
             else:
-                flyash_weight_int = int((flyash_float))
+                flyash_weight_int = int((flyash_float)*0.95)+5
     
             # ======== running process =======
             if running:
@@ -312,9 +312,9 @@ def main_controller():
             cemen_weight_int = 0
             current_amount = float(amount_string.get())
             if current_amount <= 0.5:
-                cemen_weight_int = int((f1+c1)/1.05)
+                cemen_weight_int = int((f1+c1)*0.95)+5
             else:
-                cemen_weight_int = int((f1+c1)/1.05)
+                cemen_weight_int = int((f1+c1)*0.95)+5
             
             if running:
                 modbus_result = client.write_register(address=1,value=cemen_weight_int,unit=2)
@@ -329,7 +329,14 @@ def main_controller():
                 main_window.after(state_delay,main_controller)
         # ======== set water weight =============
         elif main_state == 13:
-            water_weight_int = int((float(water_target_weight_string.get())+0.5)*1.11)
+            water_weight_float = float(water_target_weight_string.get())
+            water_weight_int = 0
+            current_amount = float(amount_string.get())
+            if current_amount <= 0.5:
+                water_weight_int = int(water_weight_float*1.2)
+            else:
+                water_weight_int = int(water_weight_float*1.05)
+
             if running:
                 modbus_result = client.write_register(address=5,value=water_weight_int,unit=2)
                 if modbus_result.function_code < 0x80:
