@@ -16,7 +16,7 @@ from PyPDF2 import PdfFileWriter, PdfFileReader
 software_path = os.path.dirname(os.path.realpath(__file__))
 run_home_window = 'python ' + software_path + '/home_window.py'
 
-running = False
+running = True
 #======= add bill information =================
 dir_path = os.path.dirname(os.path.realpath(__file__))
 font_path = dir_path + r'/fonts/THNiramitAS.ttf'
@@ -203,7 +203,7 @@ def main_controller():
 
         # set rock1 weights to PLC1
         elif main_state == 6:
-            float_rock1_target_weight = float(rock1_target_weight_string.get())*0.558 + 30
+            float_rock1_target_weight = float(rock1_target_weight_string.get())*0.4937 + 36
             rock1_weight_int = int(float_rock1_target_weight)
             if running:
                 modbus_result = client.write_register(address=0,value=rock1_weight_int,unit=0x01)
@@ -221,7 +221,7 @@ def main_controller():
         elif main_state == 7:
             r1 = float(rock1_target_weight_string.get())
             r2 = float(rock2_target_weight_string.get())
-            rock2_weight_int = int((r1+r2)*0.558 + 30)
+            rock2_weight_int = int((r1+r2)*0.4937 + 36)
             if running:
                 modbus_result = client.write_register(address=2,value=rock2_weight_int,unit=0x01)
                 if modbus_result.function_code < 0x80:
@@ -239,7 +239,7 @@ def main_controller():
             s1 = float(sand_target_weight_string.get())
             r1 = float(rock1_target_weight_string.get())
             r2 = float(rock2_target_weight_string.get())
-            sand_weight_int = int((s1+r1+r2)*0.558 + 30)
+            sand_weight_int = int((s1+r1+r2)*0.4937 + 36)
             if running:
                 modbus_result = client.write_register(address=1,value=sand_weight_int,unit=0x01)
                 if modbus_result.function_code < 0x80:

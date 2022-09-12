@@ -84,6 +84,7 @@ class DebugLoadcellApp:
         else:
             print("stop running")
 
+
     def stop_button_pressed(self):
         self.main_state = 100
         self.read_button.configure(state='normal')
