@@ -22,7 +22,7 @@ class DebugLoadcellApp:
         self.read_button.grid(column='2', row='0',pady=10)
         self.read_button.configure(command=self.read_button_pressed)
         self.label1 = ttk.Label(self.mainFrame)
-        self.label1.configure(text='ค่าใน PLC',font=main_font)
+        self.label1.configure(text='ค่า Chem ใน PLC',font=main_font)
         self.label1.grid(column='0', padx='10 0', row='0')
         self.show_entry = ttk.Entry(self.mainFrame)
         self.plc_value_string = tk.StringVar(value='')
@@ -60,22 +60,22 @@ class DebugLoadcellApp:
     def run_main_state(self):
         if self.run_main_state_flag:
             if self.main_state == 0:
-                modbus_result = self.client.write_register(address=2,value=0,unit=0x01)
+                modbus_result = self.client.write_register(address=10,value=230,unit=2)
                 if modbus_result.function_code < 0x80:
                     self.main_state = 1
             elif self.main_state == 1:
-                modbus_result = self.client.write_coil(address=2,value=1,unit=0x01)
+                modbus_result = self.client.write_coil(address=10,value=1,unit=2)
                 if modbus_result.function_code < 0x80:
                     self.main_state = 2
             elif self.main_state == 2:   # show weight
-                modbus_result = self.client.read_holding_registers(address=3,count=1,unit=1)
+                modbus_result = self.client.read_holding_registers(address=12,count=1,unit=2)
                 if modbus_result.function_code < 0x80:
                     current_weight = int(modbus_result.registers[0])
                     self.plc_value_string.set(str(current_weight))
 
             #=========== stop button pressed ===========
             elif self.main_state == 100:
-                modbus_result = self.client.write_coil(address=2,value=0,unit=0x01)
+                modbus_result = self.client.write_coil(address=10,value=0,unit=2)
                 if modbus_result.function_code < 0x80:
                     self.main_state = 101
             elif self.main_state == 101:
@@ -83,6 +83,7 @@ class DebugLoadcellApp:
             self.mainwindow.after(500,self.run_main_state)
         else:
             print("stop running")
+
 
     def stop_button_pressed(self):
         self.main_state = 100

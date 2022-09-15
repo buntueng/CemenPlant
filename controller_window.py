@@ -16,17 +16,19 @@ from PyPDF2 import PdfFileWriter, PdfFileReader
 software_path = os.path.dirname(os.path.realpath(__file__))
 run_home_window = 'python ' + software_path + '/home_window.py'
 
-running = True
+running = False
 #======= add bill information =================
 dir_path = os.path.dirname(os.path.realpath(__file__))
 font_path = dir_path + r'/fonts/THNiramitAS.ttf'
 input_path = dir_path + r'/other_files/bill_template.pdf'
+temp_path = dir_path +r'/bills/temp_bill.pdf'
 
 ON_PAGE_INDEX = 0
 UNDERNEATH = False  # if True, new content will be placed underneath page (painted first)
 
 def add_bill(customer_name,address,cemen_formula,cemen_amount):
-    output_temp_file = "/home/yana/Documents/CemenPlant/bills/temp_bill.pdf"
+    # output_temp_file = "/home/yana/Documents/CemenPlant/bills/temp_bill.pdf"
+    output_temp_file = temp_path
     now = datetime.now()
     current_date = now.strftime("%d/%m/%Y")
     current_time = now.strftime("%H:%M:%S")
@@ -43,7 +45,8 @@ def add_bill(customer_name,address,cemen_formula,cemen_amount):
     fpdf = FPDF(orientation = 'P', unit = 'mm', format='A4')
     fpdf.alias_nb_pages()
     fpdf.add_page()
-    fpdf.add_font("THNiramit", "", "/home/yana/Documents/CemenPlant/fonts/THNiramitAS.ttf", uni=True)
+    #fpdf.add_font("THNiramit", "", "/home/yana/Documents/CemenPlant/fonts/THNiramitAS.ttf", uni=True)
+    fpdf.add_font("THNiramit", "",font_path, uni=True)
     fpdf.set_font("THNiramit")
     # add information to form
     fpdf.text(53, 62, customer_name)                         # customer name
@@ -62,8 +65,10 @@ def add_bill(customer_name,address,cemen_formula,cemen_amount):
     fpdf.output(output_temp_file, 'F')
     #============================================================    
 def merge_bill(output_pdf):
-    bill_template = "/home/yana/Documents/CemenPlant/other_files/bill_template.pdf"
-    input_pdf="/home/yana/Documents/CemenPlant/bills/temp_bill.pdf"
+    #bill_template = "/home/yana/Documents/CemenPlant/other_files/bill_template.pdf"
+    bill_template =input_path
+    # input_pdf ="/home/yana/Documents/CemenPlant/bills/temp_bill.pdf"
+    input_pdf = temp_path
     watermark_obj = PdfFileReader(bill_template)
     watermark_page = watermark_obj.getPage(0)
 
@@ -108,6 +113,8 @@ def main_controller():
     global button_cancel_pressed
     global amount_string
     try:
+        #message = "state " + str(main_state)
+        #add_status(message)
         if not running:
             print(main_state)
         if main_state == 0:
@@ -159,7 +166,7 @@ def main_controller():
                 if modbus_result.function_code < 0x80:
                     main_state = 3
             else:
-                add_status("init PLC1")
+                #add_status("init PLC1")
                 main_state = 3      ## test to state 602
             if in_loop:
                 state_delay = state_interval + 500
@@ -187,7 +194,7 @@ def main_controller():
                 if modbus_result.function_code < 0x80:
                     main_state = 5
             else:
-                add_status("init PLC2")
+                #add_status("init PLC2")
                 main_state = 5
             if in_loop:
                 state_delay = state_interval + 500
@@ -203,7 +210,7 @@ def main_controller():
 
         # set rock1 weights to PLC1
         elif main_state == 6:
-            float_rock1_target_weight = float(rock1_target_weight_string.get())*0.4937 + 36
+            float_rock1_target_weight = float(rock1_target_weight_string.get())*0.445 + 475
             rock1_weight_int = int(float_rock1_target_weight)
             if running:
                 modbus_result = client.write_register(address=0,value=rock1_weight_int,unit=0x01)
@@ -221,7 +228,7 @@ def main_controller():
         elif main_state == 7:
             r1 = float(rock1_target_weight_string.get())
             r2 = float(rock2_target_weight_string.get())
-            rock2_weight_int = int((r1+r2)*0.4937 + 36)
+            rock2_weight_int = int((r1+r2)*0.445 + 475)
             if running:
                 modbus_result = client.write_register(address=2,value=rock2_weight_int,unit=0x01)
                 if modbus_result.function_code < 0x80:
@@ -239,7 +246,7 @@ def main_controller():
             s1 = float(sand_target_weight_string.get())
             r1 = float(rock1_target_weight_string.get())
             r2 = float(rock2_target_weight_string.get())
-            sand_weight_int = int((s1+r1+r2)*0.4937 + 36)
+            sand_weight_int = int((s1+r1+r2)*0.445 + 475)
             if running:
                 modbus_result = client.write_register(address=1,value=sand_weight_int,unit=0x01)
                 if modbus_result.function_code < 0x80:
@@ -287,9 +294,9 @@ def main_controller():
             flyash_weight_int = 0
             current_amount = float(amount_string.get())
             if current_amount <= 0.5:
-                flyash_weight_int = int((flyash_float)*0.95)+5
+                flyash_weight_int = int((flyash_float)*0.944)+460
             else:
-                flyash_weight_int = int((flyash_float)*0.95)+5
+                flyash_weight_int = int((flyash_float)*0.944)+460
     
             # ======== running process =======
             if running:
@@ -312,9 +319,9 @@ def main_controller():
             cemen_weight_int = 0
             current_amount = float(amount_string.get())
             if current_amount <= 0.5:
-                cemen_weight_int = int((f1+c1)*0.95)+5
+                cemen_weight_int = int((f1+c1)*0.944)+460
             else:
-                cemen_weight_int = int((f1+c1)*0.95)+5
+                cemen_weight_int = int((f1+c1)*0.944)+460
             
             if running:
                 modbus_result = client.write_register(address=1,value=cemen_weight_int,unit=2)
@@ -371,7 +378,7 @@ def main_controller():
                 modbus_result = client.write_register(address=11,value=chem2_weight_int,unit=2)
                 if modbus_result.function_code < 0x80:
                     main_state = 16
-                    # main_state = 17         # skip weight chem1
+                    #main_state = 17         # skip weight chem1
             else:
                 main_state = 16
                 message = "set chem2 " + str(chem2_weight_int) + " kg"
@@ -460,7 +467,7 @@ def main_controller():
                 message = "read rock1 weight"
                 add_status(message)
             if in_loop:
-                state_delay = state_interval + 500
+                state_delay = state_interval + 2500
                 main_window.after(state_delay,main_controller)
 
         # ======= start rock2 =================
@@ -470,7 +477,7 @@ def main_controller():
                 modbus_result = client.write_coil(address=2,value=1,unit=1)
                 if modbus_result.function_code < 0x80:
                     main_state = 22
-                    #main_state = 23         # skip check chem1 weight
+                    #main_state = 25         # skip check chem1 weight
             else:
                 main_state = 22
                 message = "start weighing rock2"
@@ -748,7 +755,7 @@ def main_controller():
                     update_weight = previous_weight + int(cemen_weight_string.get())
                     total_cemen_weight_string.set(str(update_weight))
                     main_state = 310
-                    #main_state = 311            # skip check chem2 weight
+                    #main_state = 312            # skip check chem2 weight
             else:
                 cemen_weight_string.set(str(dummy_weight))
                 # =========== update total weight ===========
@@ -1760,22 +1767,22 @@ time_constants = read_time_constants()
 plc1_time_params = time_constants[0].strip().split(',')
 plc2_time_params = time_constants[1].strip().split(',')
 
-message = "chem pump time:" + str(int(plc2_time_params[0])/10)
-add_status(message=message)
-message = "close mixer gate:" + str(int(plc2_time_params[1])/10)
-add_status(message=message)
-message = "open mixer gate 1:" + str(int(plc2_time_params[2])/10)
-add_status(message=message)
-message = "wait mixer gate 1:" + str(int(plc2_time_params[3])/10)
-add_status(message=message)
-message = "open mixer gate 2:" + str(int(plc2_time_params[4])/10)
-add_status(message=message)
-message = "wait mixer gate 2:" + str(int(plc2_time_params[5])/10)
-add_status(message=message)
-message = "open mixer gate 3:" + str(int(plc2_time_params[6])/10)
-add_status(message=message)
-message = "wait mixer gate 3:" + str(int(plc2_time_params[7])/10)
-add_status(message=message)
+# message = "chem pump time:" + str(int(plc2_time_params[0])/10)
+# add_status(message=message)
+# message = "close mixer gate:" + str(int(plc2_time_params[1])/10)
+# add_status(message=message)
+# message = "open mixer gate 1:" + str(int(plc2_time_params[2])/10)
+# add_status(message=message)
+# message = "wait mixer gate 1:" + str(int(plc2_time_params[3])/10)
+# add_status(message=message)
+# message = "open mixer gate 2:" + str(int(plc2_time_params[4])/10)
+# add_status(message=message)
+# message = "wait mixer gate 2:" + str(int(plc2_time_params[5])/10)
+# add_status(message=message)
+# message = "open mixer gate 3:" + str(int(plc2_time_params[6])/10)
+# add_status(message=message)
+# message = "wait mixer gate 3:" + str(int(plc2_time_params[7])/10)
+# add_status(message=message)
 
 # print(plc1_time_params)
 # print(plc2_time_params)
