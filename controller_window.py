@@ -27,8 +27,10 @@ ON_PAGE_INDEX = 0
 UNDERNEATH = False  # if True, new content will be placed underneath page (painted first)
 
 def add_bill(customer_name,address,cemen_formula,cemen_amount):
-    # output_temp_file = "/home/yana/Documents/CemenPlant/bills/temp_bill.pdf"
-    output_temp_file = temp_path
+    # global input_path
+    # global font_path
+    output_temp_file = "/home/yana/Documents/CemenPlant/bills/temp_bill.pdf"
+    #output_temp_file = temp_path
     now = datetime.now()
     current_date = now.strftime("%d/%m/%Y")
     current_time = now.strftime("%H:%M:%S")
@@ -45,8 +47,10 @@ def add_bill(customer_name,address,cemen_formula,cemen_amount):
     fpdf = FPDF(orientation = 'P', unit = 'mm', format='A4')
     fpdf.alias_nb_pages()
     fpdf.add_page()
-    #fpdf.add_font("THNiramit", "", "/home/yana/Documents/CemenPlant/fonts/THNiramitAS.ttf", uni=True)
-    fpdf.add_font("THNiramit", "",font_path, uni=True)
+    fpdf.add_font("THNiramit", "", "/home/yana/Documents/CemenPlant/fonts/THNiramitAS.ttf", uni=True)
+    #fpdf.add_font("THNiramit", "", r"C:/Users/ASUS/Documents/git_project/CemenPlant/fonts/THNiramitAS.ttf", uni=True)
+    #fpdf.add_font("THNiramit", "",font_path, uni=True)
+    
     fpdf.set_font("THNiramit")
     # add information to form
     fpdf.text(53, 62, customer_name)                         # customer name
@@ -55,6 +59,7 @@ def add_bill(customer_name,address,cemen_formula,cemen_amount):
     fpdf.text(55,95,cemen_amount)                            # concrete amount
     fpdf.text(55,102,current_date)                           # add date
     fpdf.text(115,102,current_time)                          # add time
+    fpdf.text(53,109,name_plate_string)
     # add the same information to form
     fpdf.text(53, 185, customer_name)                         # customer name
     fpdf.text(53, 191, address)                               # customer address
@@ -62,13 +67,14 @@ def add_bill(customer_name,address,cemen_formula,cemen_amount):
     fpdf.text(55,217,cemen_amount)                            # concrete amount
     fpdf.text(55,224,current_date)                            # add date
     fpdf.text(115,224,current_time)                           # add time
+    fpdf.text(53,231,name_plate_string)
     fpdf.output(output_temp_file, 'F')
     #============================================================    
 def merge_bill(output_pdf):
-    #bill_template = "/home/yana/Documents/CemenPlant/other_files/bill_template.pdf"
-    bill_template =input_path
-    # input_pdf ="/home/yana/Documents/CemenPlant/bills/temp_bill.pdf"
-    input_pdf = temp_path
+    bill_template = "/home/yana/Documents/CemenPlant/other_files/bill_template.pdf"
+    #bill_template =input_path
+    input_pdf ="/home/yana/Documents/CemenPlant/bills/temp_bill.pdf"
+    #input_pdf = temp_path
     watermark_obj = PdfFileReader(bill_template)
     watermark_page = watermark_obj.getPage(0)
 
@@ -1056,7 +1062,9 @@ def main_controller():
             cformula_string = formula_name_string.get()
             camount_string = concrete_order_string.get()
             add_bill(customer_name=cname_string,address=caddress_string,cemen_formula=cformula_string,cemen_amount=camount_string)
+            #print("add bill finish")
             merge_bill(output_pdf=output_path)
+            #print("merge bill finish")
             print_bill_button.configure(state=tk.NORMAL)
             add_status("Finish")
             stop_process_button.configure(state=DISABLED)
@@ -1727,6 +1735,11 @@ go_home_button.grid(row=2,column=1,padx=(20,0))
 ## [Booking_ID,Customer_Name,Phone,Amount,Formula_ID,Formula_Name,Keep_Sample,Address
 current_booking = get_processing_queue()
 customer_address_string = current_booking[6]
+name_plate_string = ""
+if current_booking[7] == "":
+    name_plate_string = "-"
+else:
+    name_plate_string = current_booking[7]
 booking_ID = '0'
 keep_sample = 0
 
@@ -1745,7 +1758,7 @@ if len(current_booking) > 0:
     concrete_order_string.set(str(current_booking[3]))
     #amount_string.set(str(current_booking[3]))
     amount_string.set("0")
-    formula_name_string.set(str(current_booking[7]))
+    formula_name_string.set(str(current_booking[8]))
     booking_ID = current_booking[0]         # this object is a string class
     mixed_finished_string.set('0.0')
     keep_sample = current_booking[5]
