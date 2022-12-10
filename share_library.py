@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 
-window_size = '1024x768'
+window_size = '1180x768'
 
 software_path = os.path.dirname(os.path.realpath(__file__))
 database_path = software_path +"/database/main_db.db"

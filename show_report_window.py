@@ -44,7 +44,7 @@ class ReportWindowApp:
         self.order_label = ttk.Label(self.frame1)
         self.order_label.configure(text='รายการ')
         self.order_label.grid(column='2', row='2', sticky='ew')
-        columns = ('order_number', 'customer_name', 'date', 'amount','agg_name','target','measure','error')
+        columns = ('order_number', 'customer_name','note', 'formula','date', 'amount','agg_name','target','measure','error')
         self.result_treeview = ttk.Treeview(self.frame1,columns=columns, show='headings',height=30)
         self.add_treeview_header()
         self.result_treeview.grid(column='0', columnspan='9', padx='10', row='3', sticky='ew',pady=10)
@@ -56,10 +56,10 @@ class ReportWindowApp:
         self.export_button.configure(text='ส่งค่าออก', width='10')
         self.export_button.grid(column='7', padx='10', row='1', rowspan='2', sticky='ew',ipady=10)
         self.export_button.configure(command=self.export_button_pressed)
-        self.print_button = ttk.Button(self.frame1)
-        self.print_button.configure(text='ปริ้น', width='10')
-        self.print_button.grid(column='8', row='1', rowspan='2', sticky='ew',ipady=10)
-        self.print_button.configure(command=self.print_button_pressed)
+        # self.print_button = ttk.Button(self.frame1)
+        # self.print_button.configure(text='ปริ้น', width='10')
+        # self.print_button.grid(column='8', row='1', rowspan='2', sticky='ew',ipady=10)
+        # self.print_button.configure(command=self.print_button_pressed)
         self.frame1.configure(height='768', width='1024')
         self.frame1.pack(side='top')
         self.reportWindow.configure(height='768', width='1024')
@@ -72,6 +72,8 @@ class ReportWindowApp:
     def add_treeview_header(self):
         self.result_treeview.heading('order_number', text='ลำดับ')
         self.result_treeview.heading('customer_name', text='ชื่อลูกค้า')
+        self.result_treeview.heading('note',text='รายละเอียดการส่งสินค้า')
+        self.result_treeview.heading('formula',text='กำลังอัด')
         self.result_treeview.heading('date', text='วันที่ เวลา')
         self.result_treeview.heading('amount', text='จำนวน')
         self.result_treeview.heading('agg_name', text='ส่วนผสม')
@@ -80,13 +82,15 @@ class ReportWindowApp:
         self.result_treeview.heading('error', text='ความผิดพลาด')
 
         self.result_treeview.column("# 1",anchor=tk.CENTER, stretch=tk.NO, width=50)
-        self.result_treeview.column("# 2",anchor=tk.CENTER, stretch=tk.NO, width=150)    
-        self.result_treeview.column("# 3",anchor=tk.CENTER, stretch=tk.NO, width=150)
-        self.result_treeview.column("# 4",anchor=tk.CENTER, stretch=tk.NO, width=60)
-        self.result_treeview.column("# 5",anchor=tk.W, stretch=tk.NO, width=150)
-        self.result_treeview.column("# 6",anchor=tk.CENTER, stretch=tk.NO, width=120)        # target
-        self.result_treeview.column("# 7",anchor=tk.CENTER, stretch=tk.NO, width=120)
-        self.result_treeview.column("# 8",anchor=tk.CENTER, stretch=tk.NO, width=120)
+        self.result_treeview.column("# 2",anchor=tk.CENTER, stretch=tk.NO, width=150)
+        self.result_treeview.column("# 3",anchor=tk.CENTER, stretch=tk.NO, width=300)
+        self.result_treeview.column("# 4",anchor=tk.CENTER, stretch=tk.NO, width=80)   
+        self.result_treeview.column("# 5",anchor=tk.CENTER, stretch=tk.NO, width=150)
+        self.result_treeview.column("# 6",anchor=tk.CENTER, stretch=tk.NO, width=60)
+        self.result_treeview.column("# 7",anchor=tk.W, stretch=tk.NO, width=150)
+        self.result_treeview.column("# 8",anchor=tk.CENTER, stretch=tk.NO, width=120)        # target
+        self.result_treeview.column("# 9",anchor=tk.CENTER, stretch=tk.NO, width=120)
+        self.result_treeview.column("# 10",anchor=tk.CENTER, stretch=tk.NO, width=120)
 
     def run(self):
         self.mainwindow.mainloop()
@@ -107,46 +111,46 @@ class ReportWindowApp:
         for present_data in response_list:
             error1 = (int(present_data[14]) - int(present_data[6]))/int(present_data[6])*100
             error1_float = float("{:.2f}".format(error1))
-            first_row = (present_data[0],present_data[2],present_data[1],present_data[4],"หิน 1",present_data[6],present_data[14],error1_float)
+            first_row = (present_data[0],present_data[2],"","formula",present_data[1],present_data[4],"หิน 1",present_data[6],present_data[14],error1_float)
             display_list.append(first_row)
 
             error2 = (int(present_data[16]) - int(present_data[8]))/int(present_data[8])*100
             error2_float = float("{:.2f}".format(error2))
-            second_row = ("","","","","หิน 2",present_data[8],present_data[16],error2_float)
+            second_row = ("","","","","","","หิน 2",present_data[8],present_data[16],error2_float)
             display_list.append(second_row)
 
             error3 = (int(present_data[15]) - int(present_data[7]))/int(present_data[7])*100
             error3_float = float("{:.2f}".format(error3))
-            third_row = ("","","","","ทราย",present_data[7],present_data[15],error3_float)
+            third_row = ("","","","","","","ทราย",present_data[7],present_data[15],error3_float)
             display_list.append(third_row)
 
             error4 = (int(present_data[17]) - int(present_data[9]))/int(present_data[9])*100
             error4_float = float("{:.2f}".format(error4))
-            fourth_row = ("","","","","ปูนซีเมนต์",present_data[9],present_data[17],error4_float)
+            fourth_row = ("","","","","","","ปูนซีเมนต์",present_data[9],present_data[17],error4_float)
             display_list.append(fourth_row)
 
             error5 = (int(present_data[18]) - int(present_data[10]))/int(present_data[10])*100
             error5_float = float("{:.2f}".format(error5))
-            fifth_row = ("","","","","เถ้าลอย",present_data[10],present_data[18],error5_float)
+            fifth_row = ("","","","","","","เถ้าลอย",present_data[10],present_data[18],error5_float)
             display_list.append(fifth_row)
 
             error6 = (int(present_data[19]) - int(present_data[11]))/int(present_data[11])*100
             error6_float = float("{:.2f}".format(error6))
-            sixth_row = ("","","","","น้ำ",present_data[11],present_data[19],error6_float)
+            sixth_row = ("","","","","","","น้ำ",present_data[11],present_data[19],error6_float)
             display_list.append(sixth_row)
 
             error7 = (float(present_data[20]) - float(present_data[12]))/float(present_data[12])*100
             error7_float = float("{:.2f}".format(error7))
             target_float = float("{:.1f}".format(present_data[12]))
             weight_float = float("{:.1f}".format(present_data[20]))
-            seventh_row = ("","","","","น้ำยาเคมี 1",target_float,weight_float,error7_float)
+            seventh_row = ("","","","","","","น้ำยาเคมี 1",target_float,weight_float,error7_float)
             display_list.append(seventh_row)
 
             error8 = (float(present_data[21]) - float(present_data[13]))/float(present_data[13])*100
             error8_float = float("{:.2f}".format(error8))
             target_float = float("{:.1f}".format(present_data[13]))
             weight_float = float("{:.1f}".format(present_data[21]))
-            eigth_row = ("","","","","น้ำยาเคมี 2",target_float,weight_float,error8_float)
+            eigth_row = ("","","","","","","น้ำยาเคมี 2",target_float,weight_float,error8_float)
             display_list.append(eigth_row)
         
         for display_item in display_list:
@@ -156,8 +160,8 @@ class ReportWindowApp:
     def export_button_pressed(self):
         pass
 
-    def print_button_pressed(self):
-        pass
+    # def print_button_pressed(self):
+    #     pass
 
 
 if __name__ == '__main__':

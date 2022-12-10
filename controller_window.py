@@ -8,88 +8,22 @@ from share_library import complete_booking_queue,save_complete_queue
 from pymodbus.client.sync import ModbusSerialClient as ModbusClient
 from os.path import exists
 
-from fpdf import FPDF
-from pdfrw import PageMerge, PdfReader, PdfWriter
+from PyPDF2 import PdfFileReader,PdfFileWriter
+from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from datetime import datetime
-from PyPDF2 import PdfFileWriter, PdfFileReader
 
 software_path = os.path.dirname(os.path.realpath(__file__))
-run_home_window = 'python ' + software_path + '/home_window.py'
+run_home_window = 'python3 ' + software_path + '/home_window.py'
 
-running = False
+running = True
 #======= add bill information =================
 dir_path = os.path.dirname(os.path.realpath(__file__))
 font_path = dir_path + r'/fonts/THNiramitAS.ttf'
 input_path = dir_path + r'/other_files/bill_template.pdf'
 temp_path = dir_path +r'/bills/temp_bill.pdf'
 
-ON_PAGE_INDEX = 0
-UNDERNEATH = False  # if True, new content will be placed underneath page (painted first)
-
-def add_bill(customer_name,address,cemen_formula,cemen_amount):
-    # global input_path
-    # global font_path
-    output_temp_file = "/home/yana/Documents/CemenPlant/bills/temp_bill.pdf"
-    #output_temp_file = temp_path
-    now = datetime.now()
-    current_date = now.strftime("%d/%m/%Y")
-    current_time = now.strftime("%H:%M:%S")
-    cemen_formula_to_display = ""
-    if cemen_formula [-3:] == 'ksc':
-        cemen_formula_to_display = cemen_formula[:-3]
-    else:
-        cemen_formula_to_display = cemen_formula
-    #============================================================
-    pdf_reader = PdfReader(input_path)
-    pdf_writer = PdfWriter()
-    pdf_writer.pagearray = pdf_reader.Root.Pages.Kids
-    # Instantiation of inherited class
-    fpdf = FPDF(orientation = 'P', unit = 'mm', format='A4')
-    fpdf.alias_nb_pages()
-    fpdf.add_page()
-    fpdf.add_font("THNiramit", "", "/home/yana/Documents/CemenPlant/fonts/THNiramitAS.ttf", uni=True)
-    #fpdf.add_font("THNiramit", "", r"C:/Users/ASUS/Documents/git_project/CemenPlant/fonts/THNiramitAS.ttf", uni=True)
-    #fpdf.add_font("THNiramit", "",font_path, uni=True)
-    
-    fpdf.set_font("THNiramit")
-    # add information to form
-    fpdf.text(53, 62, customer_name)                         # customer name
-    fpdf.text(53, 68, address)                               # customer address
-    fpdf.text(87, 78, cemen_formula_to_display)              # cemen formula
-    fpdf.text(55,95,cemen_amount)                            # concrete amount
-    fpdf.text(55,102,current_date)                           # add date
-    fpdf.text(115,102,current_time)                          # add time
-    fpdf.text(53,109,name_plate_string)
-    # add the same information to form
-    fpdf.text(53, 185, customer_name)                         # customer name
-    fpdf.text(53, 191, address)                               # customer address
-    fpdf.text(87, 201, cemen_formula_to_display)              # cemen formula
-    fpdf.text(55,217,cemen_amount)                            # concrete amount
-    fpdf.text(55,224,current_date)                            # add date
-    fpdf.text(115,224,current_time)                           # add time
-    fpdf.text(53,231,name_plate_string)
-    fpdf.output(output_temp_file, 'F')
-    #============================================================    
-def merge_bill(output_pdf):
-    bill_template = "/home/yana/Documents/CemenPlant/other_files/bill_template.pdf"
-    #bill_template =input_path
-    input_pdf ="/home/yana/Documents/CemenPlant/bills/temp_bill.pdf"
-    #input_pdf = temp_path
-    watermark_obj = PdfFileReader(bill_template)
-    watermark_page = watermark_obj.getPage(0)
-
-    pdf_reader = PdfFileReader(input_pdf)
-    pdf_writer = PdfFileWriter()
-
-    for page in range(pdf_reader.getNumPages()):
-        page = pdf_reader.getPage(page)
-        page.mergePage(watermark_page)
-        pdf_writer.addPage(page)
-
-    with open(output_pdf, 'wb') as out:
-        pdf_writer.write(out)
-
-# ===============================
 def read_time_constants():
     time_config_file = software_path+'/time_config.txt'
     params = []
@@ -106,10 +40,10 @@ in_loop = True
 quad_cubic_load = False
 first_loop = True
 button_cancel_pressed = False
-comport = '/dev/ttyS0'
-#comport = 'COM3'
-client = ModbusClient(method='rtu',port=comport,stopbitd=1,bytesize=8,parity='N',baudrate=9600,timeout=1)
+client = ModbusClient(method='rtu',port='/dev/ttyUSB1',stopbitd=1,bytesize=8,parity='N',baudrate=9600,timeout=1)
+display_client = ModbusClient(method='rtu',port='/dev/ttyUSB0',stopbitd=1,bytesize=8,parity='N',baudrate=9600,timeout=1)
 connection = client.connect()
+display_connection = display_client.connect()
 # ============== processing state =================================
 def main_controller():
     global main_state
@@ -214,58 +148,58 @@ def main_controller():
                 main_window.after(state_delay,main_controller)
             #add_status("tempolary state")
 
-        # set rock1 weights to PLC1
+        # set sand weights to PLC1
         elif main_state == 6:
-            float_rock1_target_weight = float(rock1_target_weight_string.get())*0.445 + 475
-            rock1_weight_int = int(float_rock1_target_weight)
+            sand_float = float(sand_target_weight_string.get())*0.22 + 288              # y = 0.22x + 289
+            sand_weight_int = int(sand_float)
             if running:
-                modbus_result = client.write_register(address=0,value=rock1_weight_int,unit=0x01)
+                modbus_result = client.write_register(address=1,value=sand_weight_int,unit=0x01)        # sand
                 if modbus_result.function_code < 0x80:
                     main_state = 7
             else:
                 main_state = 7
-                message = "set rock1 " + str(rock1_weight_int) + " kg"
-                add_status(message)
+                #message = "set sand weight " + str(sand_weight_int) + " kg"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
         
-        # set rock2 weights to PLC1 (rock1 + rock2)
+        # set rock1 weights to PLC1 (rock1 + sand)
         elif main_state == 7:
-            r1 = float(rock1_target_weight_string.get())
-            r2 = float(rock2_target_weight_string.get())
-            rock2_weight_int = int((r1+r2)*0.445 + 475)
+            s1 = float(sand_target_weight_string.get())
+            r1 = float(rock1_target_weight_string.get())                                # previous constant = 288
+            rock1_weight_int = int((s1+r1)*0.22 + 280)                                  # y = 0.22x + 289
             if running:
-                modbus_result = client.write_register(address=2,value=rock2_weight_int,unit=0x01)
+                modbus_result = client.write_register(address=0,value=rock1_weight_int,unit=0x01)       # rock1
                 if modbus_result.function_code < 0x80:
                     main_state = 8
             else:
                 main_state = 8
-                message = "set rock2 " + str(rock2_weight_int) + " kg"
-                add_status(message)
+                #message = "set rock1 weight " + str(rock1_weight_int) + " kg"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
         
-        # set sand weights to PLC1 (rock1 + rock2 + sand)
+        # set rock2 weights to PLC1 (rock1 + rock2 + sand)
         elif main_state == 8:
             s1 = float(sand_target_weight_string.get())
             r1 = float(rock1_target_weight_string.get())
-            r2 = float(rock2_target_weight_string.get())
-            sand_weight_int = int((s1+r1+r2)*0.445 + 475)
+            r2 = float(rock2_target_weight_string.get())                                # previous constant = 288
+            rock2_weight_int = int((s1+r1+r2)*0.22 + 280)                               # y = 0.22x + 289
             if running:
-                modbus_result = client.write_register(address=1,value=sand_weight_int,unit=0x01)
+                modbus_result = client.write_register(address=2,value=rock2_weight_int,unit=0x01)       # rock2
                 if modbus_result.function_code < 0x80:
                     main_state = 9
             else:
                 main_state = 9
-                message = "set sand " + str(sand_weight_int) + " kg"
-                add_status(message)
+                #message = "set rock2 weight " + str(rock2_weight_int) + " kg"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
 
-        # set process to open rock1 gate
+        # set process to open half cube
         elif main_state == 9:
             if running:
                 modbus_result = client.write_coil(address=7,value=quad_cubic_load,unit=0x01)
@@ -273,36 +207,34 @@ def main_controller():
                     main_state = 10
             else:
                 main_state = 10
-                message = "set process to open rock1"
-                add_status(message)
+                #message = "set process to open rock1"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
-
-        # ======== start weighting rock1 ===========
+        # ========== start weighting sand ========
         elif main_state == 10:
-            rock1_display_label.configure(bg='green')
+            sand_display_label.configure(bg='green')
             if running:
-                modbus_result = client.write_coil(address=0,value=1,unit=0x01)
+                modbus_result = client.write_coil(address=4,value=1,unit=1)
                 if modbus_result.function_code < 0x80:
                     main_state = 11
             else:
                 main_state = 11
-                message = "start weighing rock1"
-                add_status(message)
+                #message = "start weighing sand"
+                #add_status(message)
             if in_loop:
-                state_delay = state_interval + 500
+                state_delay = state_interval + 2000
                 main_window.after(state_delay,main_controller)
-
         # ========= set flyash weight ==============
         elif main_state == 11:
             flyash_float = float(flyash_target_weight_string.get())
             flyash_weight_int = 0
             current_amount = float(amount_string.get())
             if current_amount <= 0.5:
-                flyash_weight_int = int((flyash_float)*0.944)+460
+                flyash_weight_int = int((flyash_float)*0.94)+401                            # y = 0.94x+398;;; when add 405 the weight are 4 kg more than set point
             else:
-                flyash_weight_int = int((flyash_float)*0.944)+460
+                flyash_weight_int = int((flyash_float)*0.94)+398                            # previous constant value = 390
     
             # ======== running process =======
             if running:
@@ -311,8 +243,8 @@ def main_controller():
                     main_state = 12
             else:
                 main_state = 12
-                message = "set flyash weight " + str(flyash_weight_int) + " kg"
-                add_status(message)
+                #message = "set flyash weight " + str(flyash_weight_int) + " kg"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -320,14 +252,13 @@ def main_controller():
         elif main_state == 12:
             f1 = float(flyash_target_weight_string.get())
             c1 = float(cemen_target_weight_string.get())
-            #cemen_weight_int = int(((f1+c1)-11)/1.05)
             # ============ set condition 0.5 and 1 cubic
             cemen_weight_int = 0
             current_amount = float(amount_string.get())
             if current_amount <= 0.5:
-                cemen_weight_int = int((f1+c1)*0.944)+460
+                cemen_weight_int = int((f1+c1)*0.94)+397                                # y = 0.94x+380
             else:
-                cemen_weight_int = int((f1+c1)*0.944)+460
+                cemen_weight_int = int((f1+c1)*0.94)+392
             
             if running:
                 modbus_result = client.write_register(address=1,value=cemen_weight_int,unit=2)
@@ -335,8 +266,8 @@ def main_controller():
                     main_state = 13
             else:
                 main_state = 13
-                message = "set cemen " + str(cemen_weight_int) + " kg"
-                add_status(message)
+                #message = "set cemen " + str(cemen_weight_int) + " kg"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -346,9 +277,9 @@ def main_controller():
             water_weight_int = 0
             current_amount = float(amount_string.get())
             if current_amount <= 0.5:
-                water_weight_int = int(water_weight_float*1.2)
+                water_weight_int = int(water_weight_float*0.95)+360                        # y = 0.95x+341
             else:
-                water_weight_int = int(water_weight_float*1.05)
+                water_weight_int = int(water_weight_float*0.95)+360                         # previous constant = 357
 
             if running:
                 modbus_result = client.write_register(address=5,value=water_weight_int,unit=2)
@@ -356,22 +287,22 @@ def main_controller():
                     main_state = 14
             else:
                 main_state = 14
-                message = "set water " + str(water_weight_int) + " kg"
-                add_status(message)
+                #message = "set water " + str(water_weight_int) + " kg"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
         # ======= set chem1 weight =============
         elif main_state == 14:
-            chem1_weight_int = int(float(chem1_target_weight_string.get())*200)+200
+            chem1_weight_int = int(float(chem1_target_weight_string.get())*190)+140         # y = 190x + 170 >> previous constant = 149
             if running:
                 modbus_result = client.write_register(address=10,value=chem1_weight_int,unit=2)
                 if modbus_result.function_code < 0x80:
                     main_state = 15
             else:
                 main_state = 15
-                message = "set chem1 " + str(chem1_weight_int) + " kg"
-                add_status(message)
+                #message = "set chem1 " + str(chem1_weight_int) + " kg"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -379,7 +310,7 @@ def main_controller():
         elif main_state == 15:
             c1 = float(chem1_target_weight_string.get())
             c2 = float(chem2_target_weight_string.get())
-            chem2_weight_int = int((c1+c2)*200)+200
+            chem2_weight_int = int((c1+c2)*190)+145             # 190x + 170                    previous constant = 155
             if running:
                 modbus_result = client.write_register(address=11,value=chem2_weight_int,unit=2)
                 if modbus_result.function_code < 0x80:
@@ -387,8 +318,8 @@ def main_controller():
                     #main_state = 17         # skip weight chem1
             else:
                 main_state = 16
-                message = "set chem2 " + str(chem2_weight_int) + " kg"
-                add_status(message)
+                #message = "set chem2 " + str(chem2_weight_int) + " kg"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -401,8 +332,8 @@ def main_controller():
                     main_state = 17
             else:
                 main_state = 17
-                message = "start weighing chem1"
-                add_status(message)
+                #message = "start weighing chem1"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -415,8 +346,8 @@ def main_controller():
                     main_state = 18
             else:
                 main_state = 18
-                message = "start weighing flyash"
-                add_status(message)
+                #message = "start weighing flyash"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -429,65 +360,63 @@ def main_controller():
                     main_state = 19
             else:
                 main_state = 19
-                message = "start weighing water"
-                add_status(message)
+                #message = "start weighing water"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
-        # ======== check rock1 ================
+        # ========== check sand ================
         elif main_state == 19:
             if running:
-                modbus_result = client.read_coils(address=1,count=1,unit=1)
+                modbus_result = client.read_coils(address=5,count=1,unit=1)
                 if (modbus_result.function_code < 0x80) and (modbus_result.bits[0] == True):
                     main_state = 20
-                    rock1_display_label.configure(bg='white')
+                    sand_display_label.configure(bg='white')
             else:
-                rock1_display_label.configure(bg='white')
+                sand_display_label.configure(bg='white')
                 main_state = 20
-                message = "check rock1"
-                add_status(message)
+                #message = "check sand weight"
+                #add_status(message)
             if in_loop:
-                state_delay = state_interval + 500
+                state_delay = state_interval + 1500
                 main_window.after(state_delay,main_controller)
-        # ========= read rock1 weight =========
+        # ========= read sand weight ============
         elif main_state == 20:
             if running:
-                modbus_result = client.read_holding_registers(address=1,count=1,unit=5)
+                modbus_result = display_client.read_holding_registers(address=1,count=1,unit=5)
                 if modbus_result.function_code < 0x80:
-                    rock1_weight = int(modbus_result.registers[0])
-                    rock1_weight_string.set(str(rock1_weight))
-                    agg_total_weight_string.set(str(rock1_weight))
-                    # ===== update total weight ======
-                    previous_weight = int(float(total_rock1_weight_string.get()))
-                    update_weight = previous_weight + int(rock1_weight_string.get())
-                    total_rock1_weight_string.set(str(update_weight))
+                    sand_weight = int(modbus_result.registers[0])
+                    sand_weight_string.set(str(sand_weight))
+                    agg_total_weight_string.set(str(sand_weight))
+                    # =========== update total weight ===========
+                    previous_weight = int(total_sand_weight_string.get())
+                    update_weight = previous_weight + int(sand_weight_string.get())
+                    total_sand_weight_string.set(str(update_weight))
                     main_state = 21
             else:
+                sand_weight_string.set(str(dummy_weight))
+            # =========== update total weight ===========
+                previous_weight = int(total_sand_weight_string.get())
+                update_weight = previous_weight + int(sand_weight_string.get())
+                total_sand_weight_string.set(str(update_weight))
                 agg_total_weight_string.set("11")
-                rock1_weight_string.set(str(dummy_weight))
-                #========= update total weight ======
-                previous_weight = int(float(total_rock1_weight_string.get()))
-                update_weight = previous_weight + int(rock1_weight_string.get())
-                total_rock1_weight_string.set(str(update_weight))
                 main_state = 21
-                message = "read rock1 weight"
-                add_status(message)
+                #message = "read sand weight"
+                #add_status(message)
             if in_loop:
-                state_delay = state_interval + 2500
+                state_delay = state_interval + 1500
                 main_window.after(state_delay,main_controller)
-
-        # ======= start rock2 =================
+        # ======== start weighting rock1 ===========
         elif main_state == 21:
-            rock2_display_label.configure(bg='green')
+            rock1_display_label.configure(bg='green')
             if running:
-                modbus_result = client.write_coil(address=2,value=1,unit=1)
+                modbus_result = client.write_coil(address=0,value=1,unit=0x01)
                 if modbus_result.function_code < 0x80:
                     main_state = 22
-                    #main_state = 25         # skip check chem1 weight
             else:
                 main_state = 22
-                message = "start weighing rock2"
-                add_status(message)
+                #message = "start weighing rock1"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -501,8 +430,8 @@ def main_controller():
             else:
                 chem1_display_label.configure(bg='white')
                 main_state = 23
-                message = "check chem1"
-                add_status(message)
+                #message = "check chem1"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -522,15 +451,15 @@ def main_controller():
                     main_state = 24
                     #main_state = 25         # skip start weighing chem 2
             else:
-                chem1_weight_string.set(str(dummy_weight))
+                chem1_weight_string.set("1")
                 # =========== upate total chem1 ================
                 previous_weight = float(total_chem1_weight_string.get())
                 update_weight = previous_weight + float(chem1_weight_string.get())
                 one_digit = "{:.1f}".format(update_weight)
                 total_chem1_weight_string.set(one_digit)
                 main_state = 24
-                message = "read chem1"
-                add_status(message)
+                #message = "read chem1"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -543,8 +472,8 @@ def main_controller():
                     main_state = 25
             else:
                 main_state = 25
-                message = "start chem2"
-                add_status(message)
+                #message = "start chem2"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -558,8 +487,8 @@ def main_controller():
             else:
                 water_display_label.configure(bg='white')
                 main_state = 26
-                message = "check water"
-                add_status(message)
+                #message = "check water"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 1500
                 main_window.after(state_delay,main_controller)
@@ -582,8 +511,8 @@ def main_controller():
                 update_weight = previous_weight + int(water_weight_string.get())
                 total_water_weight_string.set(str(update_weight))
                 main_state = 300
-                message = "read water weight"
-                add_status(message)
+                #message = "read water weight"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -607,8 +536,8 @@ def main_controller():
                 main_window.after(state_delay,main_controller)
         # ========= dummy state =====
         elif main_state == 301:
-            message = "dummy state"
-            add_status(message)
+            #message = "dummy state"
+            #add_status(message)
             main_state = 302
             if in_loop:
                 state_delay = state_interval + 500
@@ -618,15 +547,15 @@ def main_controller():
             if running:
                 modbus_result = client.read_coils(address=1,count=1,unit=2)
                 if (modbus_result.function_code < 0x80) and (modbus_result.bits[0] == True):
-                    main_state = 303
+                    main_state = 329
                     flyash_display_label.configure(bg='white')
             else:
                 flyash_display_label.configure(bg='white')
-                main_state = 303
-                message = "check flyash"
-                add_status(message)
+                main_state = 329
+                #message = "check flyash"
+                #add_status(message)
             if in_loop:
-                state_delay = state_interval + 500
+                state_delay = state_interval + 3000
                 main_window.after(state_delay,main_controller)
         # =========== read flyash weight ======
         elif main_state == 303:
@@ -647,10 +576,10 @@ def main_controller():
                 update_weight = previous_weight + int(flyash_weight_string.get())
                 total_flyash_weight_string.set(str(update_weight))
                 main_state = 304
-                message = "read flyash weight"
-                add_status(message)
+                #message = "read flyash weight"
+                #add_status(message)
             if in_loop:
-                state_delay = state_interval + 500
+                state_delay = state_interval + 2500
                 main_window.after(state_delay,main_controller)
         # ========== start weighting cemen ======
         elif main_state == 304:
@@ -661,8 +590,8 @@ def main_controller():
                     main_state = 305
             else:
                 main_state = 305
-                message = "start weighing cemen"
-                add_status(message)
+                #message = "start weighing cemen"
+                #add_status(message)
             if in_loop:
                 state_delay = 1000
                 current_amount = float(amount_string.get())
@@ -671,67 +600,61 @@ def main_controller():
                 else:
                     state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
-        # =========== check rock2 ======
+        # ======== check rock1 ================
         elif main_state == 305:
             if running:
-                modbus_result = client.read_coils(address=3,count=1,unit=1)
+                modbus_result = client.read_coils(address=1,count=1,unit=1)
                 if (modbus_result.function_code < 0x80) and (modbus_result.bits[0] == True):
                     main_state = 306
-                    rock2_display_label.configure(bg='white')
+                    rock1_display_label.configure(bg='white')
             else:
-                rock2_display_label.configure(bg='white')
+                rock1_display_label.configure(bg='white')
                 main_state = 306
-                message = "check rock2 state"
-                add_status(message)
+                #message = "check rock1"
+                #add_status(message)
             if in_loop:
-                state_delay = state_interval + 500
+                state_delay = state_interval + 1500
                 main_window.after(state_delay,main_controller)
-        # ========== read rock2 weight ===========
+        # ========= read rock1 weight =========
         elif main_state == 306:
             if running:
-                modbus_result = client.read_holding_registers(address=1,count=1,unit=5)
+                modbus_result = display_client.read_holding_registers(address=1,count=1,unit=5)
                 if modbus_result.function_code < 0x80:
-                    rock1_plus_rock2_weight = int(modbus_result.registers[0])
-                    rock2_weight = rock1_plus_rock2_weight - int(rock1_weight_string.get())
-                    rock2_weight_string.set(str(rock2_weight))
-                    agg_total_weight_string.set(str(rock1_plus_rock2_weight))
-                    # =========== update total weight ===========
-                    previous_weight = int(total_rock2_weight_string.get())
-                    update_weight = previous_weight + int(rock2_weight_string.get())
-                    total_rock2_weight_string.set(str(update_weight))
+                    rock1_plus_sand_weight = int(modbus_result.registers[0])
+                    rock1_weight = rock1_plus_sand_weight - int(sand_weight_string.get())
+                    rock1_weight_string.set(str(rock1_weight))
+                    agg_total_weight_string.set(str(rock1_plus_sand_weight))
+                    # ===== update total weight ======
+                    previous_weight = int(float(total_rock1_weight_string.get()))
+                    update_weight = previous_weight + int(rock1_weight_string.get())
+                    total_rock1_weight_string.set(str(update_weight))
                     main_state = 307
             else:
-                rock2_weight_string.set(str(dummy_weight))
-                # =========== update total weight ===========
-                previous_weight = int(total_rock2_weight_string.get())
-                update_weight = previous_weight + int(rock2_weight_string.get())
-                total_rock2_weight_string.set(str(update_weight))
-                agg_total_weight_string.set(str(22))
-                rock1_weight_string.set(dummy_weight)
+                agg_total_weight_string.set("22")
+                rock1_weight_string.set(str(dummy_weight))
+                #========= update total weight ======
+                previous_weight = int(float(total_rock1_weight_string.get()))
+                update_weight = previous_weight + int(rock1_weight_string.get())
+                total_rock1_weight_string.set(str(update_weight))
                 main_state = 307
-                message = "read rock2 weight"
-                add_status(message)
+                #message = "read rock1 weight"
+                #add_status(message)
             if in_loop:
-                state_delay = 1000
-                current_amount = float(amount_string.get())
-                if current_amount <= 0.5:
-                    state_delay = state_interval + 5500
-                else:
-                    state_delay = state_interval + 500
+                state_delay = state_interval + 1500
                 main_window.after(state_delay,main_controller)
-        # ========== start weighting sand ========
+        # ======= start rock2 =================
         elif main_state == 307:
-            sand_display_label.configure(bg='green')
+            rock2_display_label.configure(bg='green')
             if running:
-                modbus_result = client.write_coil(address=4,value=1,unit=1)
+                modbus_result = client.write_coil(address=2,value=1,unit=1)
                 if modbus_result.function_code < 0x80:
                     main_state = 308
             else:
                 main_state = 308
-                message = "start weighing sand"
-                add_status(message)
+                #message = "start weighing rock2"
+                #add_status(message)
             if in_loop:
-                state_delay = state_interval + 2000
+                state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
         # ========== check cemen ================
         elif main_state == 308:
@@ -743,10 +666,10 @@ def main_controller():
             else:
                 cemen_display_label.configure(bg='white')
                 main_state = 309
-                message = "check cemen state"
-                add_status(message)
+                #message = "check cemen state"
+                #add_status(message)
             if in_loop:
-                state_delay = state_interval + 1000
+                state_delay = state_interval + 3000
                 main_window.after(state_delay,main_controller)
         # ====== read cemen weight ==============
         elif main_state == 309:
@@ -769,8 +692,8 @@ def main_controller():
                 update_weight = previous_weight + int(cemen_weight_string.get())
                 total_cemen_weight_string.set(str(update_weight))
                 main_state = 310
-                message = "read cemen weight"
-                add_status(message)
+                #message = "read cemen weight"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -782,8 +705,8 @@ def main_controller():
                     main_state = 311
             else:
                 main_state = 311
-                message = "check chem2"
-                add_status(message)
+                #message = "check chem2"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -804,59 +727,65 @@ def main_controller():
                     total_chem2_weight_string.set(one_digit)
                     main_state = 312
             else:
-                chem2_weight_string.set(str(dummy_weight))
+                chem2_weight_string.set("1")
                 chem2_display_label.configure(bg='white')
                 previous_weight = float(total_chem2_weight_string.get())
                 update_weight = previous_weight + float(chem2_weight_string.get())
                 one_digit = "{:.1f}".format(update_weight)
                 total_chem2_weight_string.set(one_digit)
                 main_state = 312
-                message = "read chem2 weight"
-                add_status(message)
+                #message = "read chem2 weight"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
-        # ========== check sand ================
+        # =========== check rock2 ======
         elif main_state == 312:
             if running:
-                modbus_result = client.read_coils(address=5,count=1,unit=1)
+                modbus_result = client.read_coils(address=3,count=1,unit=1)
                 if (modbus_result.function_code < 0x80) and (modbus_result.bits[0] == True):
                     main_state = 313
-                    sand_display_label.configure(bg='white')
+                    rock2_display_label.configure(bg='white')
             else:
-                sand_display_label.configure(bg='white')
+                rock2_display_label.configure(bg='white')
                 main_state = 313
-                message = "check sand weight"
-                add_status(message)
+                #message = "check rock2 state"
+                #add_status(message)
             if in_loop:
-                state_delay = state_interval + 500
+                state_delay = state_interval + 1500
                 main_window.after(state_delay,main_controller)
-        # ========= read sand weight ============
+         # ========== read rock2 weight ===========
         elif main_state == 313:
             if running:
-                modbus_result = client.read_holding_registers(address=1,count=1,unit=5)
+                modbus_result = display_client.read_holding_registers(address=1,count=1,unit=5)
                 if modbus_result.function_code < 0x80:
                     rock1_plus_rock2_plus_sand_weight = int(modbus_result.registers[0])
-                    sand_weight = rock1_plus_rock2_plus_sand_weight - int(rock1_weight_string.get()) - int(rock2_weight_string.get())
-                    sand_weight_string.set(str(sand_weight))
+                    rock2_weight = rock1_plus_rock2_plus_sand_weight - int(rock1_weight_string.get()) - int(sand_weight_string.get())
+                    rock2_weight_string.set(str(rock2_weight))
                     agg_total_weight_string.set(str(rock1_plus_rock2_plus_sand_weight))
                     # =========== update total weight ===========
-                    previous_weight = int(total_sand_weight_string.get())
-                    update_weight = previous_weight + int(sand_weight_string.get())
-                    total_sand_weight_string.set(str(update_weight))
+                    previous_weight = int(total_rock2_weight_string.get())
+                    update_weight = previous_weight + int(rock2_weight_string.get())
+                    total_rock2_weight_string.set(str(update_weight))
                     main_state = 314
             else:
-                sand_weight_string.set(str(dummy_weight))
-            # =========== update total weight ===========
-                previous_weight = int(total_sand_weight_string.get())
-                update_weight = previous_weight + int(sand_weight_string.get())
-                total_sand_weight_string.set(str(update_weight))
+                rock2_weight_string.set(str(dummy_weight))
+                # =========== update total weight ===========
+                previous_weight = int(total_rock2_weight_string.get())
+                update_weight = previous_weight + int(rock2_weight_string.get())
+                total_rock2_weight_string.set(str(update_weight))
                 agg_total_weight_string.set("33")
+                rock1_weight_string.set(dummy_weight)
                 main_state = 314
-                message = "read sand weight"
-                add_status(message)
+                #message = "read rock2 weight"
+                #add_status(message)
             if in_loop:
-                state_delay = state_interval + 500
+                state_delay = 1000
+                current_amount = float(amount_string.get())
+                if current_amount <= 0.5:
+                    state_delay = state_interval + 5500
+                else:
+                    state_delay = state_interval + 1500
                 main_window.after(state_delay,main_controller)
         # =============== start mixed all aggregates here ========
         elif main_state == 314:
@@ -868,8 +797,8 @@ def main_controller():
                     #main_state = 316        # skip pump chem to mixer
             else:
                 main_state = 315
-                message = "start mixing aggs"
-                add_status(message)
+                #message = "start mixing aggs"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 10000
                 main_window.after(state_delay,main_controller)
@@ -883,8 +812,8 @@ def main_controller():
                     main_state = 316
             else:
                 main_state = 316
-                message = "pump chemical to mixer"
-                add_status(message)
+                #message = "pump chemical to mixer"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -902,8 +831,8 @@ def main_controller():
                 chem2_display_label.configure(bg='white')
                 conveyor_label.configure(bg='white')
                 main_state = 317
-                message = "check agg status"
-                add_status(message)
+                #message = "check agg status"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -922,8 +851,8 @@ def main_controller():
                     main_state = 319            # state 319
             else:
                 main_state = 319                # state 319
-                message = "open mixer gate"
-                add_status(message)
+                #message = "open mixer gate"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 1000
                 main_window.after(state_delay,main_controller)
@@ -936,8 +865,8 @@ def main_controller():
                     main_state = 320
                     #mixer_valve_display_label.configure(bg='white')
             else:
-                message = "dummy state"
-                add_status(message)
+                #message = "dummy state"
+                #add_status(message)
                 main_state = 320
             if in_loop:
                 state_delay = state_interval + 1000
@@ -951,11 +880,74 @@ def main_controller():
                     main_state = 600
             else:
                 main_state = 600
-                message = "close mixer gate"
-                add_status(message)
+                #message = "close mixer gate"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)  
+
+        # =========== refill flyash ================
+        elif main_state == 329:                             # read display if abs(weight) <= +3 kg pass 
+            if running:
+                modbus_result = client.read_holding_registers(address=1,count=1,unit=6)
+                if modbus_result.function_code < 0x80:
+                    flyash_weight = int(modbus_result.registers[0])
+                    flyash_target = float(flyash_target_weight_string.get())
+                    if abs(flyash_weight-flyash_target) <= 3:
+                        main_state = 303
+                    else:
+                        main_state = 330
+            else:
+                main_state = 330
+            if in_loop:
+                state_delay = state_interval + 2500
+                main_window.after(state_delay,main_controller)
+        elif main_state == 330:                             # clear flags
+            flyash_display_label.configure(bg='green')
+            if running:
+                modbus_result = client.write_coil(address=0,value=0,unit=2)
+                if modbus_result.function_code < 0x80:
+                    main_state = 331
+            else:
+                main_state = 331
+            if in_loop:
+                state_delay = state_interval + 500
+                main_window.after(state_delay,main_controller)
+        elif main_state == 331:
+            flyash_display_label.configure(bg='green')
+            if running:
+                modbus_result = client.write_coil(address=1,value=0,unit=2)
+                if modbus_result.function_code < 0x80:
+                    main_state = 332
+            else:
+                main_state = 332
+            if in_loop:
+                state_delay = state_interval + 500
+                main_window.after(state_delay,main_controller)
+        elif main_state == 332:          # ======= start weighting  flyash =====
+            flyash_display_label.configure(bg='green')
+            if running:
+                modbus_result = client.write_coil(address=0,value=1,unit=2)
+                if modbus_result.function_code < 0x80:
+                    main_state = 333
+            else:
+                main_state = 333
+            if in_loop:
+                state_delay = state_interval + 500
+                main_window.after(state_delay,main_controller)
+
+        elif main_state == 333:         # recheck flyash status
+            if running:
+                modbus_result = client.read_coils(address=1,count=1,unit=2)
+                if (modbus_result.function_code < 0x80) and (modbus_result.bits[0] == True):
+                    main_state = 303
+                    flyash_display_label.configure(bg='white')
+            else:
+                flyash_display_label.configure(bg='white')
+                main_state = 303
+            if in_loop:
+                state_delay = state_interval + 5000
+                main_window.after(state_delay,main_controller)
         # ========= update amount finished and check is process complete >> if not go to state 1  else go to next state ================= 
         elif main_state == 600:
             mixed_amount = float(amount_string.get())
@@ -983,8 +975,8 @@ def main_controller():
             else:
                 mixer_display_label.configure(bg='white')
                 main_state = 602
-                message = "finish state"
-                add_status(message)
+                #message = "finish state"
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 500
                 main_window.after(state_delay,main_controller)
@@ -992,7 +984,7 @@ def main_controller():
         elif main_state == 602:
             stop_process_button.config(state='disabled')
             start_process_button.configure(state='normal')
-            add_status("End process")
+            #add_status("End process")
             #======= add this queue to database ==========
             data_list=[]
             data_list.append(booking_ID)
@@ -1048,23 +1040,73 @@ def main_controller():
         elif main_state == 603:
             #=========== generate bills and print=========
             present_time = datetime.now()
-            current_date_string = present_time.strftime('%d%B%Y')
+            current_date_string = present_time.strftime('%d %B %Y')
+            current_time_string = present_time.strftime("%H:%M:%S")
+            date_string = present_time.strftime('%d%B%Y')      
+
             bill_path1 = os.path.join(software_path,"bills")
-            bill_path2 = os.path.join(bill_path1 ,current_date_string)
+            bill_path2 = os.path.join(bill_path1 ,date_string)
             if os.path.isdir(bill_path2):
                 pass
             else:
                 os.makedirs(bill_path2, mode = 0o777)
             output_file_name = str(booking_ID) + ".pdf"
             output_path = os.path.join(bill_path2,output_file_name)
+
+            output_temp_file = os.path.join(bill_path1 ,"temp_bill.pdf")
+
             cname_string = customer_name_string.get()
             caddress_string = customer_address_string
             cformula_string = formula_name_string.get()
+            cemen_formula_to_display = ""
+            if cformula_string[-3:] == 'ksc':
+                cemen_formula_to_display = cformula_string[:-3]
+            else:
+                cemen_formula_to_display = cformula_string
             camount_string = concrete_order_string.get()
-            add_bill(customer_name=cname_string,address=caddress_string,cemen_formula=cformula_string,cemen_amount=camount_string)
-            #print("add bill finish")
-            merge_bill(output_pdf=output_path)
-            #print("merge bill finish")
+
+            # ==================== create bill =========================
+
+            # create information file
+            ctempfile = canvas.Canvas(output_temp_file)
+            # pdfmetrics.registerFont(TTFont('THNiramit', 'C:/Users/ASUS/Desktop/test_code/fonts/THNiramitAS.ttf'))
+            pdfmetrics.registerFont(TTFont('THNiramit', "/home/plant/Documents/CemenPlant/fonts/THNiramitAS.ttf"))
+            ctempfile.setFont("THNiramit",12)
+            ctempfile.saveState()
+
+            cemen_amount_string = concrete_order_string.get()
+
+            ctempfile.drawString(155, 664, cname_string)                           # customer name
+            ctempfile.drawString(155, 649, caddress_string)                                 # customer address
+            ctempfile.drawString(245, 618, cemen_formula_to_display)                # cemen formula
+            ctempfile.drawString(155,570,cemen_amount_string)                              # concrete amount
+            ctempfile.drawString(160,553,current_date_string)                              # add date
+            ctempfile.drawString(320,553,current_time_string)                              # add time
+            ctempfile.drawString(160,537,name_plate_string)                                # name plate
+            # ======= duplicate information
+            ctempfile.drawString(155, 322, cname_string)                           # customer name
+            ctempfile.drawString(155, 307, caddress_string)                                 # customer address
+            ctempfile.drawString(245, 276, cemen_formula_to_display)                # cemen formula
+            ctempfile.drawString(155,228,cemen_amount_string)                              # concrete amount
+            ctempfile.drawString(160,211,current_date_string)                              # add date
+            ctempfile.drawString(320,211,current_time_string)                              # add time
+            ctempfile.drawString(160,195,name_plate_string)                                # name plate
+            ctempfile.restoreState()
+            ctempfile.save()
+
+            # merge files
+            output = PdfFileWriter()
+            input1 = PdfFileReader(input_path,'rb')
+            watermark = PdfFileReader(output_temp_file,'rb')
+            for p in range(input1.getNumPages()):
+                page = input1.getPage(p)
+                page.mergePage(watermark.getPage(0))
+                output.addPage(page)
+            outputStream = open(output_path,'wb')
+            output.write(outputStream)
+            outputStream.close()
+           
+            # generate bill finished
             print_bill_button.configure(state=tk.NORMAL)
             add_status("Finish")
             stop_process_button.configure(state=DISABLED)
@@ -1081,7 +1123,7 @@ def main_controller():
                     main_state = 701
             else:
                 main_state = 701
-                message = "try to set timer0"
+                message = "try to set timer0 " + str(plc1_time_params[0])
                 add_status(message)
             if in_loop:
                 state_delay = state_interval + 200
@@ -1096,7 +1138,7 @@ def main_controller():
             else:
                 main_state = 702
                 message = "try to set timer 10"
-                add_status(message)
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 200
                 main_window.after(state_delay,main_controller)
@@ -1110,7 +1152,7 @@ def main_controller():
             else:
                 main_state = 703
                 message = "try to set timer 11"
-                add_status(message)
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 200
                 main_window.after(state_delay,main_controller)
@@ -1124,7 +1166,7 @@ def main_controller():
             else:
                 main_state = 704
                 message = "try to set timer 6"
-                add_status(message)
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 200
                 main_window.after(state_delay,main_controller)
@@ -1138,7 +1180,7 @@ def main_controller():
             else:
                 main_state = 705
                 message = "try to set timer 7"
-                add_status(message)
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 200
                 main_window.after(state_delay,main_controller)
@@ -1152,7 +1194,7 @@ def main_controller():
             else:
                 main_state = 706
                 message = "try to set timer 8"
-                add_status(message)
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 200
                 main_window.after(state_delay,main_controller)
@@ -1166,7 +1208,7 @@ def main_controller():
             else:
                 main_state = 707
                 message = "try to set timer 9"
-                add_status(message)
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 200
                 main_window.after(state_delay,main_controller)
@@ -1180,7 +1222,7 @@ def main_controller():
             else:
                 main_state = 708
                 message = "try to set timer 20"
-                add_status(message)
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 200
                 main_window.after(state_delay,main_controller)
@@ -1194,7 +1236,7 @@ def main_controller():
             else:
                 main_state = 709
                 message = "try to set timer 3 PLC2"
-                add_status(message)
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 200
                 main_window.after(state_delay,main_controller)
@@ -1208,7 +1250,7 @@ def main_controller():
             else:
                 main_state = 710
                 message = "try to set timer 10 PLC2"
-                add_status(message)
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 200
                 main_window.after(state_delay,main_controller)
@@ -1222,7 +1264,7 @@ def main_controller():
             else:
                 main_state = 711
                 message = "try to set timer 10 PLC2"
-                add_status(message)
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 200
                 main_window.after(state_delay,main_controller)
@@ -1236,7 +1278,7 @@ def main_controller():
             else:
                 main_state = 712
                 message = "try to set timer 12 PLC2"
-                add_status(message)
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 200
                 main_window.after(state_delay,main_controller)
@@ -1250,7 +1292,7 @@ def main_controller():
             else:
                 main_state = 713
                 message = "try to set timer 13 PLC2"
-                add_status(message)
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 200
                 main_window.after(state_delay,main_controller)
@@ -1264,7 +1306,7 @@ def main_controller():
             else:
                 main_state = 714
                 message = "try to set timer 14 PLC2"
-                add_status(message)
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 200
                 main_window.after(state_delay,main_controller)
@@ -1278,7 +1320,7 @@ def main_controller():
             else:
                 main_state = 715
                 message = "try to set timer 15 PLC2"
-                add_status(message)
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 200
                 main_window.after(state_delay,main_controller)
@@ -1292,7 +1334,7 @@ def main_controller():
             else:
                 main_state = 2
                 message = "try to set timer 16 PLC2"
-                add_status(message)
+                #add_status(message)
             if in_loop:
                 state_delay = state_interval + 200
                 main_window.after(state_delay,main_controller)
@@ -1306,7 +1348,7 @@ def main_controller():
                     main_state = 1001
             else:
                 main_state = 1001
-                add_status("run state 1000")
+                #add_status("run state 1000")
             state_delay = state_interval + 500
             main_window.after(state_delay,main_controller)
         elif main_state == 1001:            # reset PLC2
@@ -1316,7 +1358,7 @@ def main_controller():
                     main_state = 1002
             else:
                 main_state = 1002
-                add_status("run state 1001")
+                #add_status("run state 1001")
             state_delay = state_interval + 500
             main_window.after(state_delay,main_controller)
         elif main_state == 1002:            # turn off mixer
@@ -1326,7 +1368,7 @@ def main_controller():
                     main_state = 1003
             else:
                 main_state = 1003
-                add_status("run state 1002")
+                #add_status("run state 1002")
             state_delay = state_interval + 500
             main_window.after(state_delay,main_controller)
         # === dummy state ======
@@ -1354,15 +1396,22 @@ def clear_total_weight_display():
     total_cemen_weight_string.set('0')
 
 def print_bill():
+    add_status("L1")
     present_time = datetime.now()
     current_date_string = present_time.strftime('%d%B%Y')
+    add_status("L2")
     bill_path1 = os.path.join(software_path,"bills")
     bill_path2 = os.path.join(bill_path1 ,current_date_string)
+    add_status("L3")
     output_file_name = str(booking_ID) + ".pdf"
     pdf_path = os.path.join(bill_path2,output_file_name)
+    add_status("L4")
+    add_status(pdf_path)
     if exists(pdf_path):
-        print_cmd = "lp " +pdf_path
+        print_cmd = "lp -d DCPT220 " +pdf_path
         os.system(print_cmd)
+        add_status(print_cmd)
+
 def clear_queue():
     global booking_ID
     global clear_queue_status
@@ -1780,25 +1829,7 @@ time_constants = read_time_constants()
 plc1_time_params = time_constants[0].strip().split(',')
 plc2_time_params = time_constants[1].strip().split(',')
 
-# message = "chem pump time:" + str(int(plc2_time_params[0])/10)
-# add_status(message=message)
-# message = "close mixer gate:" + str(int(plc2_time_params[1])/10)
-# add_status(message=message)
-# message = "open mixer gate 1:" + str(int(plc2_time_params[2])/10)
-# add_status(message=message)
-# message = "wait mixer gate 1:" + str(int(plc2_time_params[3])/10)
-# add_status(message=message)
-# message = "open mixer gate 2:" + str(int(plc2_time_params[4])/10)
-# add_status(message=message)
-# message = "wait mixer gate 2:" + str(int(plc2_time_params[5])/10)
-# add_status(message=message)
-# message = "open mixer gate 3:" + str(int(plc2_time_params[6])/10)
-# add_status(message=message)
-# message = "wait mixer gate 3:" + str(int(plc2_time_params[7])/10)
-# add_status(message=message)
 
-# print(plc1_time_params)
-# print(plc2_time_params)
 remove_booking_queue(booking_ID)
 
 main_window.mainloop()

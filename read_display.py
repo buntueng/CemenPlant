@@ -8,7 +8,7 @@ class DebugLoadcellApp:
     def __init__(self, master=None):
         #================= pymodbus obj =========================
         comport = '/dev/ttyUSB1'
-        #comport = 'COM18'
+        # comport = 'COM7'
         self.client = ModbusClient(method='rtu',port=comport,stopbitd=1,bytesize=8,parity='N',baudrate=9600,timeout=1)
         self.connection = self.client.connect()
         # build ui
@@ -23,7 +23,7 @@ class DebugLoadcellApp:
         self.read_button.grid(column='2', row='0',pady=10)
         self.read_button.configure(command=self.read_button_pressed)
         self.label1 = ttk.Label(self.mainFrame)
-        self.label1.configure(text='ค่า Flyash ใน PLC',font=main_font)
+        self.label1.configure(text='Read Display',font=main_font)
         self.label1.grid(column='0', padx='10 0', row='0')
         self.show_entry = ttk.Entry(self.mainFrame)
         self.plc_value_string = tk.StringVar(value='')
@@ -59,35 +59,24 @@ class DebugLoadcellApp:
 
 
     def run_main_state(self):
-        try:
-            if self.run_main_state_flag:
-                if self.main_state == 0:
-                    modbus_result = self.client.write_register(address=0,value=0,unit=2)
-                    if modbus_result.function_code < 0x80:
-                        self.main_state = 1
-                elif self.main_state == 1:
-                    modbus_result = self.client.write_coil(address=0,value=1,unit=2)
-                    if modbus_result.function_code < 0x80:
-                        self.main_state = 2
-                elif self.main_state == 2:   # show weight
-                    modbus_result = self.client.read_holding_registers(address=2,count=1,unit=2)
+        if self.run_main_state_flag:
+            if self.main_state == 0:
+                try:
+                    modbus_result = self.client.read_holding_registers(address=1,count=1,unit=5)
                     if modbus_result.function_code < 0x80:
                         current_weight = int(modbus_result.registers[0])
                         self.plc_value_string.set(str(current_weight))
+                except:
+                    print("can not read display")
 
-                #=========== stop button pressed ===========
-                elif self.main_state == 100:
-                    modbus_result = self.client.write_coil(address=0,value=0,unit=2)
-                    if modbus_result.function_code < 0x80:
-                        self.main_state = 101
-                elif self.main_state == 101:
-                    self.run_main_state_flag = False
-                self.mainwindow.after(500,self.run_main_state)
-            else:
-                print("stop running")
-        except:
-            pass
-
+            #=========== stop button pressed ===========
+            elif self.main_state == 100:
+                self.main_state = 101
+            elif self.main_state == 101:
+                self.run_main_state_flag = False
+            self.mainwindow.after(1000,self.run_main_state)
+        else:
+            print("stop running")
 
     def stop_button_pressed(self):
         self.main_state = 100

@@ -1,5 +1,4 @@
 import os
-from re import M
 import tkinter as tk
 from tkinter import  font
 
@@ -7,7 +6,7 @@ from share_library import center_screen, default_window_size,read_concrete_formu
 
 software_path = os.path.dirname(os.path.realpath(__file__))
 controller_path = software_path + '/controller_window.py'
-run_home_window = 'python ' + software_path + '/home_window.py'
+run_home_window = 'python3 ' + software_path + '/home_window.py'
 
 def open_home_window():
     main_window.destroy()

@@ -1,3 +1,4 @@
 # ignore all database
 /__pycache__
 /temp_files
+/bills

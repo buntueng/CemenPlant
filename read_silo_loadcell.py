@@ -7,7 +7,8 @@ from pymodbus.client.sync import ModbusSerialClient as ModbusClient
 class DebugLoadcellApp:
     def __init__(self, master=None):
         #================= pymodbus obj =========================
-        comport = '/dev/ttyS0'
+        comport = '/dev/ttyUSB1'
+        # comport = 'COM18'
         self.client = ModbusClient(method='rtu',port=comport,stopbitd=1,bytesize=8,parity='N',baudrate=9600,timeout=1)
         self.connection = self.client.connect()
         # build ui
@@ -72,6 +73,9 @@ class DebugLoadcellApp:
                 if modbus_result.function_code < 0x80:
                     current_weight = int(modbus_result.registers[0])
                     self.plc_value_string.set(str(current_weight))
+                    #self.main_state = 3
+            elif self.main_state == 3:
+                pass
 
             #=========== stop button pressed ===========
             elif self.main_state == 100:

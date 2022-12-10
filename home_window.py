@@ -9,9 +9,9 @@ import datetime
 software_path = os.path.dirname(os.path.realpath(__file__))
 controller_path = software_path + '/controller_window.py'
 
-run_formula_window = 'python ' + software_path + '/formula_window.py'
-run_report_window = 'python ' + software_path + '/report_window.py'
-run_controller_window = 'python '+ software_path + '/controller_window.py'
+run_formula_window = 'python3 ' + software_path + '/formula_window.py'
+run_report_window = 'python3 ' + software_path + '/report_window.py'
+run_controller_window = 'python3 '+ software_path + '/controller_window.py'
 
 # ============ subprogram ===================================================
 concrete_names = []
