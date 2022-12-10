@@ -232,9 +232,9 @@ def main_controller():
             flyash_weight_int = 0
             current_amount = float(amount_string.get())
             if current_amount <= 0.5:
-                flyash_weight_int = int((flyash_float)*0.94)+401                            # y = 0.94x+398;;; when add 405 the weight are 4 kg more than set point
+                flyash_weight_int = int((flyash_float)*0.94)+405                            # y = 0.94x+398;;; 
             else:
-                flyash_weight_int = int((flyash_float)*0.94)+398                            # previous constant value = 390
+                flyash_weight_int = int((flyash_float)*0.94)+394                            # previous constant value = 398  ;;; when add 398 the weight are 4 kg more than set point
     
             # ======== running process =======
             if running:
@@ -258,7 +258,7 @@ def main_controller():
             if current_amount <= 0.5:
                 cemen_weight_int = int((f1+c1)*0.94)+397                                # y = 0.94x+380
             else:
-                cemen_weight_int = int((f1+c1)*0.94)+392
+                cemen_weight_int = int((f1+c1)*0.94)+395                                # the previous constant is 392
             
             if running:
                 modbus_result = client.write_register(address=1,value=cemen_weight_int,unit=2)
